@@ -1,0 +1,70 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net4.8.1</TargetFramework>
+		<LangVersion>Latest</LangVersion>
+		<RWDirectory>D:\Program Files G\Steam\steamapps\common\Rain World</RWDirectory>
+		<FolderProjectName>pupkarma</FolderProjectName>
+		<Nullable>disable</Nullable>
+		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Reference Include="BepInEx">
+			<HintPath>..\lib\BepInEx.dll</HintPath>
+		</Reference>
+		<Reference Include="CWStuff">
+			<HintPath>..\lib\CWStuff.dll</HintPath>
+		</Reference>
+		<Reference Include="DevConsole">
+			<HintPath>..\lib\DevConsole.dll</HintPath>
+		</Reference>
+		<Reference Include="HOOKS-Assembly-CSharp">
+			<HintPath>..\lib\HOOKS-Assembly-CSharp.dll</HintPath>
+		</Reference>
+		<Reference Include="Mono.Cecil">
+			<HintPath>..\lib\Mono.Cecil.dll</HintPath>
+		</Reference>
+		<Reference Include="MonoMod.RuntimeDetour">
+			<HintPath>..\lib\MonoMod.RuntimeDetour.dll</HintPath>
+		</Reference>
+		<Reference Include="MonoMod.Utils">
+			<HintPath>..\lib\MonoMod.Utils.dll</HintPath>
+		</Reference>
+		<Reference Include="Pearlcat">
+			<HintPath>..\lib\Pearlcat.dll</HintPath>
+		</Reference>
+		<Reference Include="Assembly-CSharp">
+			<HintPath>..\lib\PUBLIC-Assembly-CSharp.dll</HintPath>
+		</Reference>
+		<Reference Include="PUBLIC-RegionKit">
+			<HintPath>..\lib\PUBLIC-RegionKit.dll</HintPath>
+		</Reference>
+		<Reference Include="PupAi">
+			<HintPath>..\lib\PupAi.dll</HintPath>
+		</Reference>
+		<Reference Include="SlugpupStuff">
+			<HintPath>..\lib\SlugpupStuff.dll</HintPath>
+		</Reference>
+		<Reference Include="Unity.Mathematics">
+			<HintPath>..\lib\Unity.Mathematics.dll</HintPath>
+		</Reference>
+		<Reference Include="UnityEngine">
+			<HintPath>..\lib\UnityEngine.dll</HintPath>
+		</Reference>
+		<Reference Include="UnityEngine.CoreModule">
+			<HintPath>..\lib\UnityEngine.CoreModule.dll</HintPath>
+		</Reference>
+	</ItemGroup>
+
+	<Target Name="CopyDLLAfterBuild" AfterTargets="PostBuildEvent">
+		<Copy SourceFiles="$(TargetPath)" DestinationFolder="../$(AssemblyName)/plugins" />
+	</Target>
+	<ItemGroup>
+		<ModContent Include = "../$(AssemblyName)/**/*" />
+	</ItemGroup>
+	<Target Name="CopyModFolder" AfterTargets="CopyDLLAfterBuild" Condition="Exists('$(RWDirectory)')">
+		<Copy SourceFiles="@(ModContent)" DestinationFolder="$(RWDirectory)/RainWorld_Data/StreamingAssets/mods/$(AssemblyName)/%(RecursiveDir)" />
+	</Target>
+
+</Project>

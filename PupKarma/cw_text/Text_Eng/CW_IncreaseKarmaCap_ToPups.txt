@@ -1,0 +1,13 @@
+SPECIAL : LOCKPATHS
+SPECIAL : GRAV
+Welcome back, little creature.
+WAIT : 3
+I see you have new friends, and they also want to receive a gift?
+WAIT : 2
+Okay, I'll give them this little gift too.
+WAIT : 15
+SPECIAL : KARMAPUPS
+WAIT : 8
+That's it, you can go.
+SPECIAL : PARTIALGRAV
+SPECIAL : UNLOCKPATHS
