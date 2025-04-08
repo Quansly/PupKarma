@@ -423,7 +423,7 @@ namespace PupKarma.Hooks
         private static void Hook_Player_Update(On.Player.orig_Update orig, Player self, bool eu)
         {
             orig(self, eu);
-            if (self.isNPC && self.TryGetPupData(out PupData data))
+            if (self.isNPC && self.abstractCreature.TryGetPupData(out PupData data))
             {
                 if (data.realData.realPup != self)
                 {
@@ -450,7 +450,7 @@ namespace PupKarma.Hooks
         private static void Player_ctor(On.Player.orig_ctor orig, Player self, AbstractCreature abstractCreature, World world)
         {
             orig(self, abstractCreature, world);
-            if (world.game.session is StoryGameSession storySession && self.TryGetPupData(out PupData data))
+            if (world.game.session is StoryGameSession storySession && abstractCreature.TryGetPupData(out PupData data))
             {
                 data.DataRealize();
                 if (data.needToSave)

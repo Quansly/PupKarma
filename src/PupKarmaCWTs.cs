@@ -40,12 +40,6 @@ namespace PupKarma
             return crit != null && crit.world.game.IsStorySession && crit.state is PlayerNPCState pupState && (data = pupState.GetPupData()) != null;
         }
 
-        public static bool TryGetPupData(this Player player, out PupData data)
-        {
-            data = null;
-            return player != null && player.room.world.game.IsStorySession && player.playerState is PlayerNPCState pupState && (data = pupState.GetPupData()) != null;
-        }
-
         public static PupKarmaMeter GetPKM(this FoodMeter meter)
         {
             return foodKarmaCWT.GetValue(meter, _ => PupKarmaMeter.CreatePupKarmaMeter(meter));
