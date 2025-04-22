@@ -3,7 +3,7 @@ Add full-fledged karma to your slugpups, the same as the player's!
 <p align="center">
 <br>
 <img  src="PupKarma/thumbnail.png"  width="640" />
-<br><b>Thumbnail made by sluglat</b>
+<br><b>Thumbnail made by scuglat</b>
 </p>
 <br/>
 
