@@ -175,15 +175,15 @@ namespace PupKarma.Hooks
             string text = orig(self);
             if (self.TryGetPupData(out PupData data))
             {
-                bool sholdRespawn = OptionsMenu.RespawnPup.Value && self.dead;
-                if (sholdRespawn && data.karma > 0)
+                bool shouldRespawn = OptionsMenu.RespawnPup.Value;
+                if (shouldRespawn && self.dead && data.karma > 0)
                 {
                     Logger.DTDebug("Pup dead! Replace dead strings...");
                     text = Regex.Replace(text, "Dead", (self.socialMemory != null && self.socialMemory.relationShips.Count > 0) ? self.socialMemory.ToString() : "");
                 }
                 if (!data.dontLoadData)
                 {
-                    text += $"PupData<cC>{data.karmaState.SaveToString(sholdRespawn)}<cB>";
+                    text += $"PupData<cC>{data.karmaState.SaveToString(shouldRespawn && data.karmaState.dead)}<cB>";
                 }
             }
             return text;
@@ -346,11 +346,9 @@ namespace PupKarma.Hooks
                         {
                             Logger.Debug($"Pup's not in the player's shelter! Return pup back!\nPup info: {data.pup}, pup class: {data.realData.realPup.slugcatStats.name}");
 
-                            data.dontLoadData = true;
+                            data.karmaState.dead = true;
                             string pupString = SaveState.AbstractCreatureToStringStoryWorld(data.pup);
-                            data.dontLoadData = false;
 
-                            pupString += $"PupData<cC>{data.karmaState.SaveToString(true)}<cB>";
                             pupString = Regex.Replace(pupString, $"Food<cC>{data.realData.realPup.FoodInStomach}", $"Food<cC>{SlugcatStats.SlugcatFoodMeter(data.realData.realPup.slugcatStats.name).y}");
                             Logger.DTDebug("Saving slugpup: " + pupString);
                             self.pendingFriendCreatures.Add(pupString);

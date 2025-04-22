@@ -82,6 +82,14 @@ namespace PupKarma
             }
         }
 
+        public FContainer fContainer
+        {
+            get
+            {
+                return hud.fContainers[1];
+            }
+        }
+
         public PupKarmaMeter(FoodMeter pupFoodMeter, KarmaState karmaState) : base(pupFoodMeter.hud)
         {
             this.karmaState = karmaState;
@@ -90,25 +98,20 @@ namespace PupKarma
             showAsReinforced = karmaState.reinforcedKarma;
             displayKarma = new IntVector2(karmaState.karma, karmaState.karmaCap);
             displayKarma.x = Custom.IntClamp(displayKarma.x, 0, displayKarma.y);
-            foodMeterYPos = pupFoodMeter.pos.y;
-            pos = new Vector2(pupFoodMeter.pos.x - 30f, foodMeterYPos + 20 + 20 * pupFoodMeter.pupNumber);
-            lastPos = pos;
-            rad = 15f;
-            lastRad = rad;
             this.pupFoodMeter = pupFoodMeter;
             darkFade = new("Futile_White")
             {
                 shader = hud.rainWorld.Shaders["FlatLight"],
                 color = new Color(0f, 0f, 0f)
             };
-            hud.fContainers[1].AddChild(darkFade);
+            fContainer.AddChild(darkFade);
             karmaSprite = new(KarmaMeter.KarmaSymbolSprite(true, displayKarma));
-            hud.fContainers[1].AddChild(karmaSprite);
+            fContainer.AddChild(karmaSprite);
             glowSprite = new("Futile_White")
             {
                 shader = hud.rainWorld.Shaders["FlatLight"]
             };
-            hud.fContainers[1].AddChild(glowSprite);
+            fContainer.AddChild(glowSprite);
         }
 
         public PupKarmaMeter(FoodMeter meter, PupData data) : this(meter, data.karmaState)
@@ -327,7 +330,7 @@ namespace PupKarma
                 if (ringSprite == null)
                 {
                     ringSprite = new FSprite("smallKarmaRingReinforced", true);
-                    hud.fContainers[1].AddChild(ringSprite);
+                    fContainer.AddChild(ringSprite);
                 }
                 ringSprite.x = vector.x;
                 ringSprite.y = vector.y;
@@ -342,7 +345,7 @@ namespace PupKarma
                         {
                             shader = hud.rainWorld.Shaders["VectorCircleFadable"]
                         };
-                        hud.fContainers[1].AddChild(vectorRingSprite);
+                        fContainer.AddChild(vectorRingSprite);
                     }
                     vectorRingSprite.isVisible = true;
                     vectorRingSprite.x = vector.x;

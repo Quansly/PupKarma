@@ -11,7 +11,7 @@ namespace PupKarma
 
         public const string PLUGN_NAME = "Pup Karma";
 
-        public const string PLUGIN_VERSION = "1.5.1";
+        public const string PLUGIN_VERSION = "1.5.1.1";
 
         public static bool Pearlcat;
 

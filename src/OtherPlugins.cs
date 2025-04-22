@@ -102,7 +102,7 @@ namespace PupKarma
                 orig(self, hud, maxFood, survivalLimit, associatedPup, pupNumber);
                 if (hud.owner is Player && associatedPup != null && associatedPup.abstractCreature.TryGetPupData(out PupData data))
                 {
-                    autoCompDatas.Add(pupNumber, data);
+                    autoCompDatas[pupNumber] = data;
                 }
             }
 

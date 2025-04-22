@@ -2,9 +2,9 @@
 	"id": "quansly.pupkarma",
 	"name": "Pup Karma",
 	"authors": "Quansly",
-	"version": "1.5.1",
-	"target_game_version": "v1.10.1",
-	"description": "Add full-fledged karma to your slugpups, the same as the player's!<LINE>Thumbnail made by sluglat",
+	"version": "1.5.1.1",
+	"target_game_version": "v1.10.2",
+	"description": "Add full-fledged karma to your slugpups, the same as the player's!<LINE>Thumbnail made by scuglat",
 	"requirements": [ "moreslugcats" ],
 	"requirements_names": [ "More Slugcats" ],
 	"tags": [ "Game mechanics" ]

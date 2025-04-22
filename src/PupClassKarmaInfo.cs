@@ -7,6 +7,14 @@ namespace PupKarma
     {
         private static Dictionary<SlugcatStats.Name, PupClassKarmaInfo> registeredPups = [];
 
+        public static PupClassKarmaInfo Standart
+        {
+            get
+            {
+                return new(false, 0, 4);
+            }
+        }
+
         public int minKarma;
 
         public int minKarmaCap;
@@ -40,7 +48,7 @@ namespace PupKarma
             {
                 return result;
             }
-            return new(false, 0, 4);
+            return Standart;
         }
     }
 }

@@ -39,7 +39,7 @@ namespace PupKarma.Hooks
             On.TempleGuardAI.ThrowOutScore += Hook_TempleGuardAI_ThrowOutScore;
             On.VoidSea.VoidSeaScene.Update += Hook_VoidSeaScene_Update;
             IL.World.SpawnGhost += IL_World_SpawnGhost;
-            //On.World.SpawnGhost += Hook_World_SpawnGhost;
+            On.World.SpawnGhost += Hook_World_SpawnGhost;
         }
 
         private static void Player_UpdateMSC(ILContext il)
@@ -50,7 +50,6 @@ namespace PupKarma.Hooks
             {  
                 return obj != null && !(obj is Player player && player.isNPC && (!PupKarmaMain.Pearlcat || !player.abstractCreature.IsPearlPup()));
             });
-            Logger.Debug(il.ToString());
         }
 
         private static void Hook_World_SpawnGhost(On.World.orig_SpawnGhost orig, World self)
@@ -400,12 +399,10 @@ namespace PupKarma.Hooks
                 data.DataRealize();
                 if (!session.GetStorySessionExt().allDatas.Contains(data))
                 {
-                    Logger.DTDebug("Add data in all data " + self.ID);
                     session.GetStorySessionExt().allDatas.Add(data);
                 }
                 if (data.hadDataBefore && !session.saveState.GetSVEX().stateHaveDataBefore.Contains(data.karmaState))
                 {
-                    Logger.DTDebug("Add karma state in state before " + self.ID);
                     session.saveState.GetSVEX().stateHaveDataBefore.Add(data.karmaState);
                 }
             }
