@@ -43,9 +43,6 @@
 		<Reference Include="PupAi">
 			<HintPath>..\lib\PupAi.dll</HintPath>
 		</Reference>
-		<Reference Include="SlugBase">
-		  <HintPath>..\lib\SlugBase.dll</HintPath>
-		</Reference>
 		<Reference Include="SlugpupStuff">
 			<HintPath>..\lib\SlugpupStuff.dll</HintPath>
 		</Reference>
