@@ -75,10 +75,10 @@ public class PupData(PlayerNPCState pupState)
 
     public void VisitIteratorAndIncreaseKarma(Oracle oracle)
     {
-        if (!karmaState.gotIncreaseFromIterators.Contains(oracle.ID.value))
+        if (!karmaState.gotIncreaseFromIterators.Contains(oracle.ID))
         {
             realData.IncreaseKarmaIterator();
-            karmaState.gotIncreaseFromIterators.Add(oracle.ID.value);
+            karmaState.gotIncreaseFromIterators.Add(oracle.ID);
         }
     }
 
@@ -138,13 +138,13 @@ public class PupData(PlayerNPCState pupState)
         {
             if (Pup.world.game.session is StoryGameSession session)
             {
-                DeathPersistentSaveData savPlayerData = session.saveState.deathPersistentSaveData;
                 if (OptionsMenu.AssignKarmaPlayer.Value)
                 {
+                    DeathPersistentSaveData savPlayerData = session.saveState.deathPersistentSaveData;
                     karmaCap = savPlayerData.karmaCap;
                     karma = savPlayerData.karma;
                 }
-                else if (!ModManager.Expedition || !Pup.world.game.rainWorld.ExpeditionMode)
+                else if (!(ModManager.Expedition && Pup.world.game.rainWorld.ExpeditionMode))
                 {
                     int ghosts = session.GetStorySessionExt().ghosts;
                     int ghostKarmaCap = Mathf.Clamp(9 - (ghosts + ((ghosts > 3) ? 1 : 0)), classKarmaInfo.minKarmaCap, 9);
@@ -165,7 +165,7 @@ public class PupData(PlayerNPCState pupState)
                     }
                 }
                 owner.karmaAlreadyAssigned = true;
-                Logger.Debug($"Assigning karma to slugpup:\n\tClass: {realPup.slugcatStats.name}\n\t{owner}");
+                Logger.DTDebug($"Assigning karma to slugpup:\n\tClass: {realPup.slugcatStats.name}\n\t{owner}");
             }
         }
 
@@ -198,7 +198,7 @@ public class KarmaState
 
     public string oldPupString = "";
 
-    public List<string> gotIncreaseFromIterators = [];
+    public List<Oracle.OracleID> gotIncreaseFromIterators = [];
 
     public bool dead;
 
@@ -227,7 +227,14 @@ public class KarmaState
                     karmaCap = int.Parse(array2[1]);
                     break;
                 case "VisitedIterators":
-                    gotIncreaseFromIterators.AddRange(Regex.Split(array2[1], "<kpC>").Where(x => x != ""));
+                    string[] oracles = Regex.Split(array2[1], "<kpC>");
+                    for (int j = 0; j < oracles.Length; j++)
+                    {
+                        if (Oracle.OracleID.values.entries.Contains(oracles[i]))
+                        {
+                            gotIncreaseFromIterators.Add(new Oracle.OracleID(oracles[i]));
+                        }
+                    }
                     break;
             }
         }

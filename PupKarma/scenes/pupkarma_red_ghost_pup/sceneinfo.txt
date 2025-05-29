@@ -1,0 +1,5 @@
+bkg: 314, 35
+a: 458, 163
+b: 475, 117
+bkg_path: red ghost slugcat
+bkg_name: red ghost bkg

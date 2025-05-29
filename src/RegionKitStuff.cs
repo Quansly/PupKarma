@@ -39,11 +39,7 @@ namespace PupKarma
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error(
-                    [
-                        "EXCEPTION IN BIG_KARMA_SHRINE HOOK!",
-                        ex.Message
-                    ]);
+                    Logger.Error(ex);
                 }
             }));
         }

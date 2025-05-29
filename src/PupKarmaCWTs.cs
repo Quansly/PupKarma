@@ -23,6 +23,8 @@ namespace PupKarma
 
         private static ConditionalWeakTable<StoryGameSession, StorySessionExt> sessionExt = new();
 
+        private static ConditionalWeakTable<PlayerProgression.MiscProgressionData, MiscProgDataExt> miscDataExt = new();
+
         private static PupData GetPupData(this PlayerNPCState state)
         {
             return pupsData.GetValue(state, _ => new PupData(state));
@@ -53,12 +55,12 @@ namespace PupKarma
 
         public static SaveStateExt GetSVEX(this SaveState saveState)
         {
-            return saveStateExCWT.GetValue(saveState, _ => new SaveStateExt());
+            return saveStateExCWT.GetOrCreateValue(saveState);
         }
 
         public static GateExt GetGateExt(this RegionGate gate)
         {
-            return gateReq.GetValue(gate, _ => new GateExt());
+            return gateReq.GetOrCreateValue(gate);
         }
 
         public static StorySessionExt GetStorySessionExt(this StoryGameSession session)
@@ -66,11 +68,16 @@ namespace PupKarma
             return sessionExt.GetValue(session, _ => new StorySessionExt(session));
         }
 
+        public static MiscProgDataExt GetMiscProgDataExt(this PlayerProgression.MiscProgressionData miscData)
+        {
+            return miscDataExt.GetOrCreateValue(miscData);
+        }
+
         public class SaveStateExt
         {
             public bool passage;
 
-            public bool avaliableToSave;
+            public int ascendedSlugpups;
 
             public FlowerController flowerController = new();
 
@@ -145,6 +152,8 @@ namespace PupKarma
 
             public int ghosts;
 
+            public int intermediateAscendedPups;
+
             public StorySessionExt(StoryGameSession session)
             {
                 this.session = session;
@@ -176,6 +185,11 @@ namespace PupKarma
                 }
                 Logger.DTDebug("Flowers saved: " + i);
             }
+        }
+
+        public class MiscProgDataExt
+        {
+            public Dictionary<SlugcatStats.Name, int> slugcatAscendedPups = [];
         }
     }
 }

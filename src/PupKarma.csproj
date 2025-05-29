@@ -43,6 +43,9 @@
 		<Reference Include="PupAi">
 			<HintPath>..\lib\PupAi.dll</HintPath>
 		</Reference>
+		<Reference Include="SlugBase">
+		  <HintPath>..\lib\SlugBase.dll</HintPath>
+		</Reference>
 		<Reference Include="SlugpupStuff">
 			<HintPath>..\lib\SlugpupStuff.dll</HintPath>
 		</Reference>
@@ -61,7 +64,7 @@
 		<Copy SourceFiles="$(TargetPath)" DestinationFolder="../$(AssemblyName)/plugins" />
 	</Target>
 	<ItemGroup>
-		<ModContent Include = "../$(AssemblyName)/**/*" />
+		<ModContent Include="../$(AssemblyName)/**/*" />
 	</ItemGroup>
 	<Target Name="CopyModFolder" AfterTargets="CopyDLLAfterBuild" Condition="Exists('$(RWDirectory)')">
 		<Copy SourceFiles="@(ModContent)" DestinationFolder="$(RWDirectory)/RainWorld_Data/StreamingAssets/mods/$(AssemblyName)/%(RecursiveDir)" />

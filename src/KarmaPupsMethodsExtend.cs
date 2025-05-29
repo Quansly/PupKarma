@@ -13,7 +13,7 @@ namespace PupKarma
         {
             for (int i = 0; i < iterator.room.abstractRoom.creatures.Count; i++)
             {
-                if (iterator.room.abstractRoom.creatures[i].TryGetPupData(out PupData data) && !data.karmaState.gotIncreaseFromIterators.Contains(iterator.ID.value) && data.karmaCap < 9)
+                if (iterator.room.abstractRoom.creatures[i].TryGetPupData(out PupData data) && !data.karmaState.gotIncreaseFromIterators.Contains(iterator.ID) && data.karmaCap < 9)
                 {
                     return true;
                 }

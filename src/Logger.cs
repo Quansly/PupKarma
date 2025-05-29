@@ -1,4 +1,6 @@
-﻿namespace PupKarma
+﻿using System.Runtime.CompilerServices;
+
+namespace PupKarma
 {
     internal class Logger
     {
@@ -15,9 +17,9 @@
             PupKarmaMain.LoggerPupKarma.LogDebug(obj);
         }
 
-        public static void Error(string[] strs)
+        public static void Error(object message, [CallerMemberName]string caller = "")
         {
-            PupKarmaMain.LoggerPupKarma.LogError($"{strs[0]}\n{strs[1]}");
+            PupKarmaMain.LoggerPupKarma.LogError($"Error in {caller}\nMessage:\n{message}");
         }
 
         public static void Info(object obj)

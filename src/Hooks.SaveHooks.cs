@@ -21,6 +21,46 @@ namespace PupKarma.Hooks
             On.MoreSlugcats.PlayerNPCState.CycleTick += Hook_PlayerNPCState_CycleTick;
             On.RegionState.AdaptWorldToRegionState += Hook_RegionState_AdaptWorldToRegionState;
             IL.RegionState.AdaptRegionStateToWorld += IL_RegionState_AdaptRegionStateToWorld;
+            On.PlayerProgression.MiscProgressionData.ToString += MiscProgressionData_ToString;
+            On.PlayerProgression.MiscProgressionData.FromString += MiscProgressionData_FromString;
+            On.PlayerProgression.WipeAll += Hook_PlayerProgression_WipeAll;
+        }
+
+        private static void Hook_PlayerProgression_WipeAll(On.PlayerProgression.orig_WipeAll orig, PlayerProgression self)
+        {
+            self.miscProgressionData.GetMiscProgDataExt().slugcatAscendedPups.Clear();
+            orig(self);
+        }
+
+        private static void MiscProgressionData_FromString(On.PlayerProgression.MiscProgressionData.orig_FromString orig, PlayerProgression.MiscProgressionData self, string s)
+        {
+            orig(self, s);
+            string[] array1 = Regex.Split(s, "<mpdA>");
+            for (int i = 0; i < array1.Length; i++)
+            {
+                string[] array2 = Regex.Split(array1[i], "<mpdB>");
+                if (array2[0] == "SLUGCATASCENDEDPUPS" && SlugcatStats.Name.values.entries.Contains(array2[1]))
+                {
+                    self.GetMiscProgDataExt().slugcatAscendedPups.Add(new SlugcatStats.Name(array2[1]), int.Parse(array2[2]));
+                    self.unrecognizedSaveStrings.Remove(array1[i]);
+                }
+            }
+        }
+
+        private static string MiscProgressionData_ToString(On.PlayerProgression.MiscProgressionData.orig_ToString orig, PlayerProgression.MiscProgressionData self)
+        {
+            string result = orig(self);
+            if (self.GetMiscProgDataExt().slugcatAscendedPups.Count > 0)
+            {
+                foreach (var kvp in self.GetMiscProgDataExt().slugcatAscendedPups)
+                {
+                    if (kvp.Value > 0)
+                    {
+                        result += $"SLUGCATASCENDEDPUPS<mpdB>{kvp.Key}<mpdB>{kvp.Value}<mpdA>";
+                    }
+                }
+            }
+            return result;
         }
 
         private static void IL_RegionState_AdaptRegionStateToWorld(ILContext il)
@@ -86,7 +126,7 @@ namespace PupKarma.Hooks
 
                             if (array2[0] == "SAVE STATE" && BackwardsCompatibilityRemix.ParseSaveNumber(array2[1]) == progression.currentSaveState.saveStateNumber)
                             {
-                                Logger.Debug($"Save state found. Player is dead: {saveAsIfPlayerDied}");
+                                Logger.DTDebug($"Save state found. Player is dead: {saveAsIfPlayerDied}");
                                 bool pupFlowersFound = false;
                                 string[] pupsAndFlowers = progression.currentSaveState.GetSVEX().SavePupsAndFlowersToUnsaveable(saveAsIfPlayerDied);
                                 string[] arr1 = Regex.Split(array2[1], "<svA>");
@@ -96,19 +136,24 @@ namespace PupKarma.Hooks
 
                                     if (arr2[0] == "FRIENDS" && pupsAndFlowers[0] != "")
                                     {
-                                        Logger.DTDebug("Friends found. Replace pups");
+                                        Logger.DTDebug($"Friends found. Replace pups\nFriends bebore replaces: {arr2[1]}");
                                         string[] arr3 = Regex.Split(arr2[1], "<svC>");
                                         for (int num3 = 0; num3 < arr3.Length; num3++)
                                         {
+                                            Logger.DTDebug("Friend: " + arr3[num3]);
                                             AbstractCreature abstractCreature = SaveState.AbstractCreatureFromString(null, arr3[num3], false);
                                             if (abstractCreature != null && abstractCreature.IsSlugpup())
                                             {
+                                                Logger.DTDebug("Friend is slugpup");
                                                 arr2[1] = Regex.Replace(arr2[1], arr3[num3] + "<svC>", "");
+                                                Logger.DTDebug("After pup's null: " + arr2[1]);
                                             }
                                         }
+                                        Logger.DTDebug("Pup to ready to save: " + pupsAndFlowers[0]);
                                         arr2[1] += pupsAndFlowers[0];
                                         string text = string.Join("<svB>", arr2);
                                         origStrs[num1] = Regex.Replace(origStrs[num1], arr1[num2], text);
+                                        Logger.DTDebug("Friends after replaces: " + arr2[1]);
                                     }
                                     if (arr2[0] == "FlowerPupsPos" && !pupFlowersFound)
                                     {
@@ -123,18 +168,14 @@ namespace PupKarma.Hooks
                                     Logger.DTDebug("Flowers not found. Saving separately");
                                     origStrs[num1] += $"FlowerPupsPos<svB>{pupsAndFlowers[1]}<svA>";
                                 }
-                                Logger.DTDebug(origStrs[num1]);
+                                Logger.DTDebug("Save state result: " + origStrs[num1]);
                                 break;
                             }
                         }
                     }
                     catch (Exception ex)
                     {
-                        Logger.Error(
-                        [
-                            "Error saving! Exception in PlayerProgression_SaveDeathPersistentDataOfCurrentState",
-                            ex.Message
-                        ]);
+                        Logger.Error(ex);
                     }
 
                     return origStrs;
@@ -143,11 +184,7 @@ namespace PupKarma.Hooks
             }
             catch (Exception ex)
             {
-                Logger.Error(
-                [
-                    "Exception in PlayerProgression_SaveDeathPersistentDataOfCurrentState",
-                    ex.Message
-                ]);
+                Logger.Error(ex);
             }
         }
 
@@ -251,11 +288,7 @@ namespace PupKarma.Hooks
             }
             catch (Exception ex)
             {
-                Logger.Error(
-                [
-                    "Error saving the player's progression!",
-                    ex.Message
-                ]);
+                Logger.Error(ex);
             }
 
             return orig(self, saveCurrentState, saveMaps, saveMiscProg);
@@ -375,11 +408,7 @@ namespace PupKarma.Hooks
             }
             catch (Exception ex)
             {
-                Logger.Error(
-                [
-                    "Exception in SessionEnded hook!",
-                    ex.Message
-                ]);
+                Logger.Error(ex);
             }
             orig(self, game, survived, newMalnourished);
         }

@@ -5,15 +5,13 @@ using MoreSlugcats;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
+using VoidSea;
 
 namespace PupKarma.Hooks
 {
     internal class GameHooks
     {
-        static List<PupData> dataGhosts;
-
-        static bool isPupReject;
-
         public static void Init()
         {
             On.KarmaFlower.BitByPlayer += Hook_KarmaFlower_BitByPlayer;
@@ -26,7 +24,6 @@ namespace PupKarma.Hooks
             IL.Player.UpdateMSC += Player_UpdateMSC;
             On.Player.SlugOnBack.SlugToBack += Hook_SlugOnBack_SlugToBack;
             On.AbstractCreature.Update += Hook_AbstractCreature_Update;
-            On.AbstractCreature.Realize += Hook_AbstractCreature_Realize;
             InitHookMeetRequirment();
             IL.RegionGate.KarmaBlinkRed += IL_RegionGate_KarmaBlinkRed;
             On.SSOracleBehavior.Update += Hook_SSOracleBehavior_Update;
@@ -39,24 +36,41 @@ namespace PupKarma.Hooks
             On.TempleGuardAI.ThrowOutScore += Hook_TempleGuardAI_ThrowOutScore;
             On.VoidSea.VoidSeaScene.Update += Hook_VoidSeaScene_Update;
             IL.World.SpawnGhost += IL_World_SpawnGhost;
-            On.World.SpawnGhost += Hook_World_SpawnGhost;
+            On.RainWorldGame.ExitToVoidSeaSlideShow += Hook_RainWorldGame_ExitToVoidSeaSlideShow;
+        }
+
+        private static void Hook_RainWorldGame_ExitToVoidSeaSlideShow(On.RainWorldGame.orig_ExitToVoidSeaSlideShow orig, RainWorldGame self)
+        {
+            if (self.session is StoryGameSession session)
+            {
+                var countPupDic = session.saveState.progression.miscProgressionData.GetMiscProgDataExt().slugcatAscendedPups;
+                if (countPupDic.ContainsKey(session.saveStateNumber))
+                {
+                    countPupDic[session.saveStateNumber] = session.GetStorySessionExt().intermediateAscendedPups;
+                }
+                else
+                {
+                    countPupDic.Add(session.saveStateNumber, session.GetStorySessionExt().intermediateAscendedPups);
+                }
+            }
+            orig(self);
         }
 
         private static void Player_UpdateMSC(ILContext il)
         {
-            ILCursor c = new(il);
-            c.GotoNext(MoveType.After, x => x.MatchLdfld<Creature.Grasp>("grabbed"));
-            c.EmitDelegate((PhysicalObject obj) =>
-            {  
-                return obj != null && !(obj is Player player && player.isNPC && (!PupKarmaMain.Pearlcat || !player.abstractCreature.IsPearlPup()));
-            });
-        }
-
-        private static void Hook_World_SpawnGhost(On.World.orig_SpawnGhost orig, World self)
-        {
-            orig(self);
-            dataGhosts = null;
-            isPupReject = false;
+            try
+            {
+                ILCursor c = new(il);
+                c.GotoNext(MoveType.After, x => x.MatchLdfld<Creature.Grasp>("grabbed"));
+                c.EmitDelegate((PhysicalObject obj) =>
+                {
+                    return obj != null && !(obj is Player player && player.isNPC && !(PupKarmaMain.Pearlcat && player.abstractCreature.IsPearlPup()));
+                });
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex);
+            }
         }
 
         private static void IL_World_SpawnGhost(ILContext il)
@@ -66,31 +80,33 @@ namespace PupKarma.Hooks
                 ILCursor c = new(il);
                 c.GotoNext(MoveType.After, x => x.MatchCall(typeof(GhostWorldPresence).GetMethod(nameof(GhostWorldPresence.SpawnGhost))));
 
+                List<PupData> pupDataGhosts = [];
+                bool aritPupReject = false;
+
                 c.Emit(OpCodes.Ldarg_0);
                 c.Emit(OpCodes.Ldloc_1);
                 c.EmitDelegate((bool ob, World world, int num) =>
                 {
                     int opVal = OptionsMenu.SelectReqToSpawnGhost.Value;
                     if (opVal == 0) return ob;
-                    dataGhosts = new(world.game.GetStorySession.saveState.pendingFriendCreatures.Count);
                     foreach (string str in world.game.GetStorySession.saveState.pendingFriendCreatures)
                     {
                         AbstractCreature crit = SaveState.AbstractCreatureFromString(world, str, false);
                         if (crit != null && crit.IsSlugpup() && crit.TryGetPupData(out PupData data))
                         {
-                            dataGhosts.Add(data);
+                            pupDataGhosts.Add(data);
                             crit.state.CycleTick();
                             data.needToSave = false;
                             crit.Realize();
                         }
                     }
                     bool isOne = opVal == 1;
-                    foreach (PupData data in dataGhosts.Where(data => data.pup.state.alive))
+                    foreach (PupData data in pupDataGhosts.Where(data => data.pup.state.alive))
                     {
                         if (GhostWorldPresence.SpawnGhost(GhostWorldPresence.GetGhostID(world.region.name), data.karma, data.karmaCap, num, world.game.StoryCharacter == SlugcatStats.Name.Red) == isOne)
                         {
                             Logger.DTDebug(isOne ? "Pup has suitable karma level! Spawn echo!" : "Pup doesn't has suitable karma level! Echo spawn canceled!");
-                            isPupReject = true;
+                            aritPupReject = true;
                             return isOne;
                         }
                     }
@@ -104,12 +120,11 @@ namespace PupKarma.Hooks
                 c.EmitDelegate((bool ob, World world, int num) =>
                 {
                     int opVal = OptionsMenu.SelectReqToSpawnGhost.Value;
-                    if (opVal == 0) return ob;
-                    if (isPupReject) return false;
-                    foreach (PupData data in dataGhosts.Where(data => data.pup.state.alive))
+                    if (opVal == 1)
                     {
-                        if (opVal == 1)
+                        foreach (PupData data in pupDataGhosts.Where(data => data.pup.state.alive))
                         {
+
                             if (data.karmaCap < 4 && data.karmaCap == data.karma && data.reinforcedKarma)
                             {
                                 Logger.DTDebug("Arti: Pup has suitable karma level! Spawn echo!");
@@ -117,32 +132,41 @@ namespace PupKarma.Hooks
                             }
                         }
                     }
+                    else if (opVal == 2 && aritPupReject)
+                    {
+                        return false;
+                    }
 
                     return ob;
                 });
             }
             catch (Exception ex)
             {
-                Logger.Error(
-                [
-                    "Exception in IL_World_SpawnGhost",
-                    ex.Message
-                ]);
+                Logger.Error(ex);
             }
         }
 
-        private static void Hook_VoidSeaScene_Update(On.VoidSea.VoidSeaScene.orig_Update orig, VoidSea.VoidSeaScene self, bool eu)
+        private static void Hook_VoidSeaScene_Update(On.VoidSea.VoidSeaScene.orig_Update orig, VoidSeaScene self, bool eu)
         {
-            orig(self, eu);
+            int voidPups = 0;
             for (int i = 0; i < self.room.abstractRoom.creatures.Count; i++)
             {
                 AbstractCreature crit = self.room.abstractRoom.creatures[i];
-                if (crit != null && crit.IsSlugpup())
+                if (crit.IsSlugpup() && !(PupKarmaMain.Pearlcat && crit.IsPearlPup()))
                 {
                     Player pup = crit.realizedCreature as Player;
-                    pup.inVoidSea = pup.mainBodyChunk.pos.y < self.sceneOrigo.y && !self.Inverted;
+                    if (pup.inVoidSea = pup.mainBodyChunk.pos.y < self.sceneOrigo.y && !self.Inverted)
+                    {
+                        voidPups++;
+                    }
+                    self.UpdatePlayerInVoidSea(pup);
                 }
             }
+            if (self.room.game.session is StoryGameSession session)
+            {
+                session.GetStorySessionExt().intermediateAscendedPups = voidPups;
+            }
+            orig(self, eu);
         }
 
         private static float Hook_TempleGuardAI_ThrowOutScore(On.TempleGuardAI.orig_ThrowOutScore orig, TempleGuardAI self, Tracker.CreatureRepresentation crit)
@@ -328,11 +352,7 @@ namespace PupKarma.Hooks
             }
             catch (Exception ex)
             {
-                Logger.Error(
-                [
-                    "Exception in IL_RegionGate_KarmaBlinkRed",
-                    ex.Message
-                ]);
+                Logger.Error(ex);
             }
         }
 
@@ -360,7 +380,7 @@ namespace PupKarma.Hooks
                                     if (gate.karmaRequirements[gate.letThroughDir ? 0 : 1].value == "10" && isOne && !gate.KarmaGateRequirementPup(data.karmaState))
                                     {
                                         return false;
-                                    } 
+                                    }
                                     else if (gate.KarmaGateRequirementPup(data.karmaState) == isOne)
                                     {
                                         return isOne;
@@ -374,11 +394,7 @@ namespace PupKarma.Hooks
             }
             catch (Exception ex)
             {
-                Logger.Error(
-                [
-                    "Exception in InitHookMeetRequirment",
-                    ex.Message
-                ]);
+                Logger.Error(ex);
             }
         }
 
@@ -388,23 +404,6 @@ namespace PupKarma.Hooks
             if (self.state is PlayerNPCState pupState && pupState.TryGetPupData(out PupData data))
             {
                 data.karmaState.dead = pupState.dead;
-            }
-        }
-
-        private static void Hook_AbstractCreature_Realize(On.AbstractCreature.orig_Realize orig, AbstractCreature self)
-        {
-            orig(self);
-            if (self.world.game.session is StoryGameSession session && self.IsSlugpup() && self.TryGetPupData(out PupData data))
-            {
-                data.DataRealize();
-                if (!session.GetStorySessionExt().allDatas.Contains(data))
-                {
-                    session.GetStorySessionExt().allDatas.Add(data);
-                }
-                if (data.hadDataBefore && !session.saveState.GetSVEX().stateHaveDataBefore.Contains(data.karmaState))
-                {
-                    session.saveState.GetSVEX().stateHaveDataBefore.Add(data.karmaState);
-                }
             }
         }
 
@@ -452,6 +451,7 @@ namespace PupKarma.Hooks
                 data.DataRealize();
                 if (data.needToSave)
                 {
+                    Logger.DTDebug("saving");
                     if (!storySession.GetStorySessionExt().allDatas.Contains(data))
                     {
                         storySession.GetStorySessionExt().allDatas.Add(data);
@@ -485,11 +485,7 @@ namespace PupKarma.Hooks
             }
             catch (Exception ex)
             {
-                Logger.Error(
-                [
-                    "An error occurred in the slugpup movement method.",
-                    ex.Message
-                ]);
+                Logger.Error(ex);
             }
         }
 
@@ -545,11 +541,7 @@ namespace PupKarma.Hooks
             }
             catch (Exception ex)
             {
-                Logger.Error(
-                [
-                    "Exception in IL_KarmaFlower_BitByPlayer",
-                    ex.Message
-                ]);
+                Logger.Error(ex);
             }
         }
 

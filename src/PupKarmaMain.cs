@@ -11,7 +11,7 @@ namespace PupKarma
 
         public const string PLUGN_NAME = "Pup Karma";
 
-        public const string PLUGIN_VERSION = "1.5.1.1";
+        public const string PLUGIN_VERSION = "1.6.0";
 
         public static bool Pearlcat;
 
@@ -27,9 +27,6 @@ namespace PupKarma
         public void OnEnable()
         {
             LoggerPupKarma = Logger;
-            HUDHooks.Init();
-            SaveHooks.Init();
-            GameHooks.Init();
             On.RainWorld.OnModsInit += Hook_On_Mods_Init;
             On.RainWorld.PostModsInit += Hook_RainWorld_PostModsInit;
             Logger.LogInfo("Pup karma enable");
@@ -42,6 +39,10 @@ namespace PupKarma
             {
                 MachineConnector.SetRegisteredOI("quansly.pupkarma", options);
                 SSPupKarmaSubBehaviour.RegisterValues();
+                HUDHooks.Init();
+                SaveHooks.Init();
+                GameHooks.Init();
+                MenuHooks.Init();
             }
             catch (Exception ex)
             {

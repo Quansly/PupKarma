@@ -1,0 +1,5 @@
+bkg: 330, -18
+a: 431, 89
+b: 448, 74
+bkg_path: slugcat end - gourmand
+bkg_name: gourmand bkg
