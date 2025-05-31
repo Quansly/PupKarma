@@ -11,9 +11,13 @@ namespace PupKarma
 
         public const string PLUGN_NAME = "Pup Karma";
 
-        public const string PLUGIN_VERSION = "1.6.0";
+        public const string PLUGIN_VERSION = "1.6.0.1";
 
         public static bool Pearlcat;
+
+        private bool PupKarmaInit;
+
+        private bool ModsInit;
 
         internal static ManualLogSource LoggerPupKarma;
 
@@ -27,8 +31,8 @@ namespace PupKarma
         public void OnEnable()
         {
             LoggerPupKarma = Logger;
-            On.RainWorld.OnModsInit += Hook_On_Mods_Init;
             On.RainWorld.PostModsInit += Hook_RainWorld_PostModsInit;
+            On.RainWorld.OnModsInit += Hook_On_Mods_Init;
             Logger.LogInfo("Pup karma enable");
         }
 
@@ -37,12 +41,16 @@ namespace PupKarma
             orig(self);
             try
             {
-                MachineConnector.SetRegisteredOI("quansly.pupkarma", options);
-                SSPupKarmaSubBehaviour.RegisterValues();
-                HUDHooks.Init();
-                SaveHooks.Init();
-                GameHooks.Init();
-                MenuHooks.Init();
+                if (!PupKarmaInit)
+                {
+                    MachineConnector.SetRegisteredOI(PLUGIN_GUID, options);
+                    SSPupKarmaSubBehaviour.RegisterValues();
+                    HUDHooks.Init();
+                    SaveHooks.Init();
+                    GameHooks.Init();
+                    MenuHooks.Init();
+                    PupKarmaInit = true;
+                }
             }
             catch (Exception ex)
             {
@@ -57,32 +65,36 @@ namespace PupKarma
             orig(self);
             try
             {
-                foreach (ModManager.Mod mod in ModManager.ActiveMods)
+                if (!ModsInit)
                 {
-                    switch (mod.id)
+                    foreach (ModManager.Mod mod in ModManager.ActiveMods)
                     {
-                        case "slime-cubed.devconsole":
-                            OtherPlugins.DevConsole.DevConsoleInit();
-                            break;
-                        case "Antoneeee.PupAi":
-                            OtherPlugins.InitILPupAI();
-                            break;
-                        case "yeliah.slugpupFieldtrip":
-                            OtherPlugins.InitILSlugpupSafari();
-                            break;
-                        case "regionkit":
-                            RegionKitStuff.InitHookReginKit_BigKarmaShrine_Update();
-                            break;
-                        case "myr.chasing_wind":
-                            OtherPlugins.CWHooks.Init();
-                            break;
-                        case "iwantbread.slugpupstuff":
-                            OtherPlugins.RegisterPupsPlus();
-                            break;
-                        case "pearlcat":
-                            Pearlcat = true;
-                            break;
+                        switch (mod.id)
+                        {
+                            case "slime-cubed.devconsole":
+                                OtherPlugins.DevConsole.DevConsoleInit();
+                                break;
+                            case "Antoneeee.PupAi":
+                                OtherPlugins.InitILPupAI();
+                                break;
+                            case "yeliah.slugpupFieldtrip":
+                                OtherPlugins.InitILSlugpupSafari();
+                                break;
+                            case "regionkit":
+                                RegionKitStuff.InitHookReginKit_BigKarmaShrine_Update();
+                                break;
+                            case "myr.chasing_wind":
+                                OtherPlugins.CWHooks.Init();
+                                break;
+                            case "iwantbread.slugpupstuff":
+                                OtherPlugins.RegisterPupsPlus();
+                                break;
+                            case "pearlcat":
+                                Pearlcat = true;
+                                break;
+                        }
                     }
+                    ModsInit = true;
                 }
             }
             catch (Exception ex)

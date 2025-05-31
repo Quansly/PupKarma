@@ -2,6 +2,8 @@
 using MonoMod.Cil;
 using MoreSlugcats;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace PupKarma.Hooks
@@ -28,20 +30,21 @@ namespace PupKarma.Hooks
 
         private static void Hook_PlayerProgression_WipeAll(On.PlayerProgression.orig_WipeAll orig, PlayerProgression self)
         {
-            self.miscProgressionData.GetMiscProgDataExt().slugcatAscendedPups.Clear();
+            self.miscProgressionData.GetMPDExt().slugcatAscendedPups.Clear();
             orig(self);
         }
 
         private static void MiscProgressionData_FromString(On.PlayerProgression.MiscProgressionData.orig_FromString orig, PlayerProgression.MiscProgressionData self, string s)
         {
             orig(self, s);
+            Logger.Debug("MPD From string: " + s);
             string[] array1 = Regex.Split(s, "<mpdA>");
             for (int i = 0; i < array1.Length; i++)
             {
                 string[] array2 = Regex.Split(array1[i], "<mpdB>");
                 if (array2[0] == "SLUGCATASCENDEDPUPS" && SlugcatStats.Name.values.entries.Contains(array2[1]))
                 {
-                    self.GetMiscProgDataExt().slugcatAscendedPups.Add(new SlugcatStats.Name(array2[1]), int.Parse(array2[2]));
+                    self.GetMPDExt().slugcatAscendedPups[new(array2[1])] = int.Parse(array2[2]);
                     self.unrecognizedSaveStrings.Remove(array1[i]);
                 }
             }
@@ -50,9 +53,9 @@ namespace PupKarma.Hooks
         private static string MiscProgressionData_ToString(On.PlayerProgression.MiscProgressionData.orig_ToString orig, PlayerProgression.MiscProgressionData self)
         {
             string result = orig(self);
-            if (self.GetMiscProgDataExt().slugcatAscendedPups.Count > 0)
+            if (self.GetMPDExt().slugcatAscendedPups.Count > 0)
             {
-                foreach (var kvp in self.GetMiscProgDataExt().slugcatAscendedPups)
+                foreach (var kvp in self.GetMPDExt().slugcatAscendedPups)
                 {
                     if (kvp.Value > 0)
                     {
@@ -60,6 +63,7 @@ namespace PupKarma.Hooks
                     }
                 }
             }
+            Logger.Debug("MPD save result: " + result);
             return result;
         }
 
@@ -254,36 +258,39 @@ namespace PupKarma.Hooks
         {
             try
             {
-                PupKarmaCWTs.SaveStateExt svEx = self.currentSaveState.GetSVEX();
-
-                if (svEx.passage)
+                if (self.currentSaveState != null)
                 {
-                    svEx.flowerController.ClearFlowers();
-                    for (int i = 0; i < self.currentSaveState.pendingFriendCreatures.Count; i++)
+                    PupKarmaCWTs.SaveStateExt svEx = self.currentSaveState.GetSVEX();
+
+                    if (svEx.passage)
                     {
-                        AbstractCreature abstractCreature = SaveState.AbstractCreatureFromString(null, self.currentSaveState.pendingFriendCreatures[i], false);
-                        if (abstractCreature != null && abstractCreature.IsSlugpup())
+                        svEx.flowerController.ClearFlowers();
+                        for (int i = 0; i < self.currentSaveState.pendingFriendCreatures.Count; i++)
                         {
-                            string[] a1 = Regex.Split(Regex.Split(self.currentSaveState.pendingFriendCreatures[i], "<cA>")[3], "<cB>");
-                            for (int num4 = 0; num4 < a1.Length; num4++)
+                            AbstractCreature abstractCreature = SaveState.AbstractCreatureFromString(null, self.currentSaveState.pendingFriendCreatures[i], false);
+                            if (abstractCreature != null && abstractCreature.IsSlugpup())
                             {
-                                string[] a2 = Regex.Split(a1[num4], "<cC>");
-                                if (a2[0] == "PupData")
+                                string[] a1 = Regex.Split(Regex.Split(self.currentSaveState.pendingFriendCreatures[i], "<cA>")[3], "<cB>");
+                                for (int num4 = 0; num4 < a1.Length; num4++)
                                 {
-                                    KarmaState karmaState = new();
-                                    karmaState.LoadFromString(a2[1]);
-                                    karmaState.karma = karmaState.karmaCap;
-                                    self.currentSaveState.pendingFriendCreatures[i] = Regex.Replace(self.currentSaveState.pendingFriendCreatures[i], a2[1], karmaState.SaveToString(false));
-                                    break;
+                                    string[] a2 = Regex.Split(a1[num4], "<cC>");
+                                    if (a2[0] == "PupData")
+                                    {
+                                        KarmaState karmaState = new();
+                                        karmaState.LoadFromString(a2[1]);
+                                        karmaState.karma = karmaState.karmaCap;
+                                        self.currentSaveState.pendingFriendCreatures[i] = Regex.Replace(self.currentSaveState.pendingFriendCreatures[i], a2[1], karmaState.SaveToString(false));
+                                        break;
+                                    }
                                 }
                             }
                         }
+                        svEx.passage = false;
                     }
-                    svEx.passage = false;
-                }
-                else if (saveCurrentState)
-                {
-                    self.currentSaveState.AddUnrecognized(svEx.flowerController.SaveFlowers());
+                    else if (saveCurrentState)
+                    {
+                        self.currentSaveState.AddUnrecognized(svEx.flowerController.SaveFlowers());
+                    }
                 }
             }
             catch (Exception ex)

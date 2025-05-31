@@ -25,7 +25,7 @@ namespace PupKarma.Hooks
             if (self.sceneID.value.Contains("PupKarma"))
             {
                 string folderScenePath = $"{scenePath}{self.sceneID}";
-                int pups = Mathf.Clamp(self.menu.manager.rainWorld.progression.miscProgressionData.GetMiscProgDataExt().slugcatAscendedPups[(self.owner as SlugcatSelectMenu.SlugcatPage).slugcatNumber], 1, 2);
+                int pups = Mathf.Clamp(self.menu.manager.rainWorld.progression.miscProgressionData.GetMPDExt().slugcatAscendedPups[(self.owner as SlugcatSelectMenu.SlugcatPage).slugcatNumber], 1, 2);
                 if (self.flatMode)
                 {
                     self.AddIllustration(new MenuIllustration(self.menu, self, folderScenePath, "flat_" + pups, new(0, 0), false, false));
@@ -53,7 +53,8 @@ namespace PupKarma.Hooks
                 c.Emit(OpCodes.Ldloc_0);
                 c.EmitDelegate((SlugcatSelectMenu.SlugcatPage page, MenuScene.SceneID sceneID) =>
                 {
-                    if (page.menu.manager.rainWorld.progression.miscProgressionData.GetMiscProgDataExt().slugcatAscendedPups.ContainsKey(page.slugcatNumber) && page.menu.manager.rainWorld.progression.miscProgressionData.GetMiscProgDataExt().slugcatAscendedPups[page.slugcatNumber] > 0)
+                    var sAP = page.menu.manager.rainWorld.progression.miscProgressionData.GetMPDExt().slugcatAscendedPups;
+                    if (sAP.ContainsKey(page.slugcatNumber) && sAP[page.slugcatNumber] > 0)
                     {
                         if (sceneID == MenuScene.SceneID.Ghost_White)
                         {

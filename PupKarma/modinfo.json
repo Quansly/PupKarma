@@ -2,7 +2,7 @@
 	"id": "quansly.pupkarma",
 	"name": "Pup Karma",
 	"authors": "Quansly",
-	"version": "1.6.0",
+	"version": "1.6.0.1",
 	"target_game_version": "v1.10.4",
 	"description": "Add full-fledged karma to your slugpups, the same as the player's!<LINE>Thumbnail and cutscenes made by scuglat",
 	"requirements": [ "moreslugcats" ],

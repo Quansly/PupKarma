@@ -68,7 +68,7 @@ namespace PupKarma
             return sessionExt.GetValue(session, _ => new StorySessionExt(session));
         }
 
-        public static MiscProgDataExt GetMiscProgDataExt(this PlayerProgression.MiscProgressionData miscData)
+        public static MiscProgDataExt GetMPDExt(this PlayerProgression.MiscProgressionData miscData)
         {
             return miscDataExt.GetOrCreateValue(miscData);
         }

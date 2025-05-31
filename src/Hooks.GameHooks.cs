@@ -39,19 +39,16 @@ namespace PupKarma.Hooks
             On.RainWorldGame.ExitToVoidSeaSlideShow += Hook_RainWorldGame_ExitToVoidSeaSlideShow;
         }
 
+        private static void Player_UpdateMSC1(ILContext il)
+        {
+            Logger.Debug(il.ToString());
+        }
+
         private static void Hook_RainWorldGame_ExitToVoidSeaSlideShow(On.RainWorldGame.orig_ExitToVoidSeaSlideShow orig, RainWorldGame self)
         {
             if (self.session is StoryGameSession session)
             {
-                var countPupDic = session.saveState.progression.miscProgressionData.GetMiscProgDataExt().slugcatAscendedPups;
-                if (countPupDic.ContainsKey(session.saveStateNumber))
-                {
-                    countPupDic[session.saveStateNumber] = session.GetStorySessionExt().intermediateAscendedPups;
-                }
-                else
-                {
-                    countPupDic.Add(session.saveStateNumber, session.GetStorySessionExt().intermediateAscendedPups);
-                }
+                session.saveState.progression.miscProgressionData.GetMPDExt().slugcatAscendedPups[session.saveStateNumber] = session.GetStorySessionExt().intermediateAscendedPups;
             }
             orig(self);
         }
@@ -61,6 +58,7 @@ namespace PupKarma.Hooks
             try
             {
                 ILCursor c = new(il);
+                c.GotoNext(x => x.MatchLdfld<Player>("inVoidSea"));
                 c.GotoNext(MoveType.After, x => x.MatchLdfld<Creature.Grasp>("grabbed"));
                 c.EmitDelegate((PhysicalObject obj) =>
                 {

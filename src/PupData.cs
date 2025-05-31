@@ -232,7 +232,7 @@ public class KarmaState
                     {
                         if (Oracle.OracleID.values.entries.Contains(oracles[i]))
                         {
-                            gotIncreaseFromIterators.Add(new Oracle.OracleID(oracles[i]));
+                            gotIncreaseFromIterators.Add(new(oracles[i]));
                         }
                     }
                     break;

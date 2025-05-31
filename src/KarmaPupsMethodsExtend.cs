@@ -1,4 +1,5 @@
 ﻿using MoreSlugcats;
+using System.Collections.Generic;
 
 namespace PupKarma
 {
