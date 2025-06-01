@@ -21,10 +21,10 @@ namespace PupKarma.Hooks
         private static void MenuScene_BuildScene(On.Menu.MenuScene.orig_BuildScene orig, MenuScene self)
         {
             orig(self);
-            string scenePath = $"Scenes{Path.DirectorySeparatorChar}";
+            string scenePath = "Scenes" + Path.DirectorySeparatorChar;
             if (self.sceneID.value.Contains("PupKarma"))
             {
-                string folderScenePath = $"{scenePath}{self.sceneID}";
+                string folderScenePath = scenePath + self.sceneID.ToString();
                 int pups = Mathf.Clamp(self.menu.manager.rainWorld.progression.miscProgressionData.GetMPDExt().slugcatAscendedPups[(self.owner as SlugcatSelectMenu.SlugcatPage).slugcatNumber], 1, 2);
                 if (self.flatMode)
                 {

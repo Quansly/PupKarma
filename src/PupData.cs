@@ -212,9 +212,9 @@ public class KarmaState
     public void LoadFromString(string s)
     {
         string[] array1 = Regex.Split(s, "<kpA>");
-        for (int i = 0; i < array1.Length; i++)
+        for (int num1 = 0; num1 < array1.Length; num1++)
         {
-            string[] array2 = Regex.Split(array1[i], "<kpB>");
+            string[] array2 = Regex.Split(array1[num1], "<kpB>");
             switch (array2[0])
             {
                 case "KarmaReinforce":
@@ -228,11 +228,11 @@ public class KarmaState
                     break;
                 case "VisitedIterators":
                     string[] oracles = Regex.Split(array2[1], "<kpC>");
-                    for (int j = 0; j < oracles.Length; j++)
+                    for (int num2 = 0; num2 < oracles.Length; num2++)
                     {
-                        if (Oracle.OracleID.values.entries.Contains(oracles[i]))
+                        if (Oracle.OracleID.values.entries.Contains(oracles[num2]))
                         {
-                            gotIncreaseFromIterators.Add(new(oracles[i]));
+                            gotIncreaseFromIterators.Add(new(oracles[num2]));
                         }
                     }
                     break;
