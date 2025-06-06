@@ -19,7 +19,7 @@ namespace PupKarma
 
         public static Configurable<bool> HideKarmaMeter;
 
-        public static Configurable<bool> RespawnPup;
+        public static Configurable<bool> RevivePup;
 
         public static Configurable<bool> ReturnPupInShelterAfterSave;
 
@@ -32,6 +32,16 @@ namespace PupKarma
         public static Configurable<bool> LightUpPKM;
 
         public static Configurable<bool> DontPickUpPlayerFlower;
+
+        public static Configurable<bool> RespawnPupInPreviousShelter;
+
+        public static bool CanRespawnPupInPrevShelter
+        {
+            get
+            {
+                return RespawnPupInPreviousShelter.Value && (RevivePup.Value || ReturnPupInShelterAfterSave.Value);
+            }
+        }
         
         public void CreateCheckBoxNLabel(OpTab tabAdder, Configurable<bool> configCheckBox, float posX, float posY, string labelText, string buttonDesc, bool isCheats = false)
         {
@@ -95,8 +105,9 @@ namespace PupKarma
             SpawnKarmaFlowers = config.Bind("pupkarma_can_pups_spawn_flowers", true);
             AssignKarmaPlayer = config.Bind("give_pups_player_karma", false);
             HideKarmaMeter = config.Bind("hide_pup_karma_meters", false);
-            RespawnPup = config.Bind("respawn_pup", false);
+            RevivePup = config.Bind("respawn_pup", false);
             ReturnPupInShelterAfterSave = config.Bind("return_pup_in_shelter", false);
+            RespawnPupInPreviousShelter = config.Bind("respawn_pup_in_previous_shelter", false);
             PersonalityKarma = config.Bind("use_personality_karma", false);
             IgnoreGuardianKarma = config.Bind("ignore_guardian_karma", false);
             SpawnFlowersWithASimpleDistribution = config.Bind("cheat_spawn_flowers", false);
@@ -192,14 +203,15 @@ namespace PupKarma
 
                 new OpLabel(240, opY, "Other Options", true)
             ]);
-            OpCheckBox hidePKMButton = new OpCheckBox(HideKarmaMeter, 330f, opY - 30f);
-            OverrideOpCheckBox lightUpPKMButton = new OverrideOpCheckBox(LightUpPKM, 330f, opY - 65f, hidePKMButton)
+            OpCheckBox hidePKMButton = new(HideKarmaMeter, 330f, opY - 30f);
+            OverrideOpCheckBox lightUpPKMButton = new(LightUpPKM, 330f, opY - 65f, hidePKMButton)
             {
                 description = "Lights up pup karma meter when pup holds karma flower"
             };
             CreateCheckBoxNLabel(options, SpawnKarmaFlowers, 30f, opY - 30f, "Pups spawn karma flowers", "Slugpups leave karma flowers after death if their karma is rainforced, also karma flowers appear if the player died, but slugpups had reinforced karma.\n(works only with a standard and complicated reinforce distribution)");
-            CreateCheckBoxNLabel(options, AssignKarmaPlayer, 30f, opY - 65f, "Pups have player's karma", "Slugpups have the karma and karma cap of the player. Unlike the \"Pups assgning karma cap\" feature, it does not matter that the karma cap level may be lower than 5.\nAlso, if these two features are enabled, the game will give preference to this feature.");
+            CreateCheckBoxNLabel(options, AssignKarmaPlayer, 30f, opY - 65f, "Pups have player's karma", "Slugpups have the karma and karma cap of the player.\nIf \"Personality pup karma\" enabled, the game will give preference to this feature.");
             CreateCheckBoxNLabel(options, PersonalityKarma, 30f, opY - 100f, "Personality pup karma", "Pups will use their personal qualities to assign karma when they appear.");
+            CreateCheckBoxNLabel(options, RespawnPupInPreviousShelter, 30, opY - 135f, "Respawn pup in previous hibernation shelter", "When the slugpup respawn/return features are enabled, slupups will respawn/return to the previous shelter where slugpup was sleeping.\nThis feature was added in order to make the mod more lore accurate.");
             CreateCheckBoxNLabel(options, hidePKMButton, "Hide pup karma meters");
             CreateCheckBoxNLabel(options, lightUpPKMButton, "Light up pup karma meter");
             CreateCheckBoxNLabel(options, DontPickUpPlayerFlower, 330f, opY - 100f, "Don't pick up player spawned karma flower", "Slugpups will not pick up the karma flower that appeared at the player's death site (slugpups will want to eat it if you give it to them)");
@@ -212,12 +224,12 @@ namespace PupKarma
                 }
             ]);
 
-            OpCheckBox respawnButton = new OpCheckBox(RespawnPup, 30, 400)
+            OpCheckBox respawnButton = new(RevivePup, 30, 400)
             {
                 colorEdge = cheatColor,
                 description = "Saved dead pups will be revived for the next cycle at the cost of lowering karma."
             };
-            OverrideOpCheckBox returnButton = new OverrideOpCheckBox(ReturnPupInShelterAfterSave, 30, 365, respawnButton, true)
+            OverrideOpCheckBox returnButton = new(ReturnPupInShelterAfterSave, 30, 365, respawnButton, true)
             {
                 colorEdge = cheatColor,
                 description = "Returns saved slugpups to the shelter after the cycle ends."

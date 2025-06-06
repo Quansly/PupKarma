@@ -1,30 +1,33 @@
-﻿using System.Runtime.CompilerServices;
+﻿using BepInEx.Logging;
+using System.Runtime.CompilerServices;
 
 namespace PupKarma
 {
     internal class Logger
     {
+        internal static ManualLogSource _logger;
+
         public static void DTDebug(object obj)
         {
             if (ModManager.DevTools)
             {
-                PupKarmaMain.LoggerPupKarma.LogDebug(obj);
+                _logger.LogDebug(obj);
             }
         }
 
         public static void Debug(object obj)
         {
-            PupKarmaMain.LoggerPupKarma.LogDebug(obj);
+            _logger.LogDebug(obj);
         }
 
         public static void Error(object message, [CallerMemberName]string caller = "")
         {
-            PupKarmaMain.LoggerPupKarma.LogError($"Error in {caller}\nMessage:\n{message}");
+            _logger.LogError($"Error in {caller}\nMessage:\n{message}");
         }
 
         public static void Info(object obj)
         {
-            PupKarmaMain.LoggerPupKarma.LogInfo(obj);
+            _logger.LogInfo(obj);
         }
     }
 }

@@ -1,5 +1,4 @@
 ﻿using BepInEx;
-using BepInEx.Logging;
 using PupKarma.Hooks;
 using System;
 namespace PupKarma
@@ -11,15 +10,13 @@ namespace PupKarma
 
         public const string PLUGN_NAME = "Pup Karma";
 
-        public const string PLUGIN_VERSION = "1.6.0.2";
+        public const string PLUGIN_VERSION = "1.6.1";
 
         public static bool Pearlcat;
 
         private bool PupKarmaInit;
 
         private bool ModsInit;
-
-        internal static ManualLogSource LoggerPupKarma;
 
         internal static OptionsMenu options;
 
@@ -30,7 +27,7 @@ namespace PupKarma
 
         public void OnEnable()
         {
-            LoggerPupKarma = Logger;
+            PupKarma.Logger._logger = Logger;
             On.RainWorld.PostModsInit += Hook_RainWorld_PostModsInit;
             On.RainWorld.OnModsInit += Hook_On_Mods_Init;
             Logger.LogInfo("Pup karma enable");
@@ -44,7 +41,7 @@ namespace PupKarma
                 if (!PupKarmaInit)
                 {
                     MachineConnector.SetRegisteredOI(PLUGIN_GUID, options);
-                    SSPupKarmaSubBehaviour.RegisterValues();
+                    PupKarmaEnums.RegisterValues();
                     HUDHooks.Init();
                     SaveHooks.Init();
                     GameHooks.Init();

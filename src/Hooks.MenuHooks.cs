@@ -13,7 +13,6 @@ namespace PupKarma.Hooks
     {
         public static void Init()
         {
-            PupScenesID.RegisterValues();
             IL.Menu.SlugcatSelectMenu.SlugcatPage.AddImage += SlugcatPage_AddImage;
             On.Menu.MenuScene.BuildScene += MenuScene_BuildScene;
         }
@@ -58,15 +57,15 @@ namespace PupKarma.Hooks
                     {
                         if (sceneID == MenuScene.SceneID.Ghost_White)
                         {
-                            sceneID = PupScenesID.PupKarma_White_Ghost_Pup;
+                            sceneID = PupKarmaEnums.PupScenesID.PupKarma_White_Ghost_Pup;
                         }
                         else if (sceneID == MenuScene.SceneID.Ghost_Red)
                         {
-                            sceneID = PupScenesID.PupKarma_Red_Ghost_Pup;
+                            sceneID = PupKarmaEnums.PupScenesID.PupKarma_Red_Ghost_Pup;
                         }
                         else if (sceneID == MoreSlugcatsEnums.MenuSceneID.End_Gourmand)
                         {
-                            sceneID = PupScenesID.PupKarma_Gourmand_Ghost_Pup;
+                            sceneID = PupKarmaEnums.PupScenesID.PupKarma_Gourmand_Ghost_Pup;
                         }
                     }
                     return sceneID;
@@ -121,22 +120,6 @@ namespace PupKarma.Hooks
             {
                 string[] pos = Regex.Split(str, ", ");
                 return new Vector2(float.Parse(pos[0]), float.Parse(pos[1]));
-            }
-        }
-
-        public static class PupScenesID
-        {
-            public static MenuScene.SceneID PupKarma_White_Ghost_Pup;
-
-            public static MenuScene.SceneID PupKarma_Red_Ghost_Pup;
-
-            public static MenuScene.SceneID PupKarma_Gourmand_Ghost_Pup;
-
-            public static void RegisterValues()
-            {
-                PupKarma_White_Ghost_Pup = new("PupKarma_White_Ghost_Pup", true);
-                PupKarma_Red_Ghost_Pup = new("PupKarma_Red_Ghost_Pup", true);
-                PupKarma_Gourmand_Ghost_Pup = new("PupKarma_Gourmand_Ghost_Pup", true);
             }
         }
     }

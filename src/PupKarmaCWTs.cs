@@ -1,13 +1,8 @@
 ﻿using HUD;
-using System;
+using MoreSlugcats;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using MoreSlugcats;
-using System.Text;
-using System.Threading.Tasks;
-using System.Net.NetworkInformation;
-using UnityEngine.Experimental.GlobalIllumination;
 
 namespace PupKarma
 {
@@ -50,10 +45,10 @@ namespace PupKarma
         public static bool TryGetPupKarmaMeter(this FoodMeter foodMeter, out PupKarmaMeter pupKarmaMeter)
         {
             pupKarmaMeter = null;
-            return foodMeter != null && foodMeter.hud.owner is Player && foodMeter.IsPupFoodMeter && (pupKarmaMeter = foodMeter.GetPKM()) != null;
+            return foodMeter != null && !OptionsMenu.HideKarmaMeter.Value && foodMeter.hud.owner is Player && foodMeter.IsPupFoodMeter && (pupKarmaMeter = foodMeter.GetPKM()) != null;
         }
 
-        public static SaveStateExt GetSVEX(this SaveState saveState)
+        public static SaveStateExt GetSVExt(this SaveState saveState)
         {
             return saveStateExCWT.GetOrCreateValue(saveState);
         }
@@ -77,8 +72,6 @@ namespace PupKarma
         {
             public bool passage;
 
-            public int ascendedSlugpups;
-
             public FlowerController flowerController = new();
 
             public List<KarmaState> stateHaveDataBefore = [];
@@ -96,7 +89,7 @@ namespace PupKarma
                     }
                 }
                 stateHaveDataBefore.Clear();
-
+                
                 return
                 [
                     resultPups,
@@ -150,6 +143,8 @@ namespace PupKarma
 
             public List<PupData> allDatas = [];
 
+            public List<AbstractCreature> pupsWantsFoodBars;
+
             public int ghosts;
 
             public int intermediateAscendedPups;
@@ -178,7 +173,7 @@ namespace PupKarma
                 {
                     if (data.karmaState.karmaFlowerPos != null && data.karmaState.karmaFlowerPos.Value.Valid)
                     {
-                        session.saveState.GetSVEX().flowerController.flowersPositions.Add(data.karmaState.karmaFlowerPos.Value);
+                        session.saveState.GetSVExt().flowerController.flowersPositions.Add(data.karmaState.karmaFlowerPos.Value);
                         data.karmaState.karmaFlowerPos = null;
                         i++;
                     }

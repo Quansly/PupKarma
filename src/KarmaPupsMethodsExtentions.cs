@@ -1,20 +1,19 @@
 ﻿using MoreSlugcats;
-using System.Collections.Generic;
 
 namespace PupKarma
 {
-    public static class KarmaPupsMethodsExtend
+    public static class KarmaPupsMethodsExtentions
     {
         public static bool IsSlugpup(this AbstractCreature pup)
         {
             return pup.creatureTemplate.TopAncestor().type == MoreSlugcatsEnums.CreatureTemplateType.SlugNPC;
         }
 
-        public static bool HaveOneLowKarmaCapInIteratorRoom(this Oracle iterator)
+        public static bool HaveOneLowKarmaCapInIteratorRoom(this Oracle oracle)
         {
-            for (int i = 0; i < iterator.room.abstractRoom.creatures.Count; i++)
+            for (int i = 0; i < oracle.room.abstractRoom.creatures.Count; i++)
             {
-                if (iterator.room.abstractRoom.creatures[i].TryGetPupData(out PupData data) && !data.karmaState.gotIncreaseFromIterators.Contains(iterator.ID) && data.karmaCap < 9)
+                if (oracle.room.abstractRoom.creatures[i].TryGetPupData(out PupData data) && !data.karmaState.VisitOracle(oracle.ID) && data.karmaCap < 9)
                 {
                     return true;
                 }

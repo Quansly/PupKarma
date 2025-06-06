@@ -148,11 +148,14 @@ namespace PupKarma
             }
             lastReinforcementCycle = reinforcementCycle;
             reinforcementCycle += 0.011111111f;
-            if (OptionsMenu.SelectKarmagateMode.Value != 0 && abstractPup.state.alive && hud.owner != null && hud.owner is Player mainPlayerVis && mainPlayerVis.room != null &&
-                mainPlayerVis.room.abstractRoom != null && mainPlayerVis.room.abstractRoom.gate && pup.room != null && pup.room == mainPlayerVis.room
-                && mainPlayerVis.room.regionGate != null && mainPlayerVis.room.regionGate.mode == RegionGate.Mode.MiddleClosed)
+            if (OptionsMenu.SelectKarmagateMode.Value != 0 && abstractPup.state.alive && hud.owner != null && hud.owner is Player player && player.room != null &&
+                pup.room != null && pup.room == player.room && player.room.regionGate != null)
             {
-                forceVisibleCounter = Math.Max(forceVisibleCounter, 10);
+                if (player.room.regionGate.mode == RegionGate.Mode.MiddleClosed)
+                {
+                    forceVisibleCounter = Math.Max(forceVisibleCounter, 10);
+                }
+                blinkRed = BlinkRedPupKarmaMeterGate(player.room.regionGate);
             }
             if (OptionsMenu.LightUpPKM.Value && pup.HaveKarmaFlower())
             {
@@ -211,7 +214,7 @@ namespace PupKarma
             }
 
             color = 0;
-            blinkRed = abstractPup.state.alive && hud.owner is Player mainPlayer && mainPlayer.room != null && mainPlayer.room.regionGate != null && pup.room != null && pup.room == mainPlayer.room && BlinkRedPupKarmaMeterGate(mainPlayer.room.regionGate);
+            
             rad = Custom.LerpAndTick(rad, Custom.LerpMap(fade, 0f, 0.15f, 9f, Mathf.Lerp(15f, 13f, pupFoodMeter.deathFade), 1.3f), 0.12f, 0.1f);
             if (pupFoodMeter.notInShelter > 0f)
             {
@@ -259,7 +262,6 @@ namespace PupKarma
                 else if (reinforceAnimation == 104)
                 {
                     FadeCircle fadeCircle = new(hud, rad, 9f, 0.68f, 50f, 4f, pos, hud.fContainers[1]);
-                    fadeCircle.circle.sprite.color = karmaColor;
                     hud.fadeCircles.Add(fadeCircle);
                     hud.PlaySound(SoundID.HUD_Karma_Reinforce_Small_Circle);
                     hud.PlaySound(SoundID.HUD_Karma_Reinforce_Contract);
@@ -284,7 +286,6 @@ namespace PupKarma
                         karmaSprite.element = Futile.atlasManager.GetElementWithName(KarmaMeter.KarmaSymbolSprite(true, displayKarma));
                         showAsReinforced = karmaState.reinforcedKarma;
                         FadeCircle fadeCircle = new(hud, rad, 13f, 0.78f, 80f, 8f, pos, hud.fContainers[1]);
-                        fadeCircle.circle.sprite.color = karmaColor;
                         hud.fadeCircles.Add(fadeCircle);
                         hud.PlaySound(SoundID.HUD_Karma_Reinforce_Bump);
                         reinforceAnimation = -1;
@@ -419,13 +420,13 @@ namespace PupKarma
 
         public static PupKarmaMeter CreatePupKarmaMeter(FoodMeter meter)
         {
-            if (!meter.IsPupFoodMeter || !meter.abstractPup.TryGetPupData(out PupData data))
+            if (meter.IsPupFoodMeter && meter.abstractPup.TryGetPupData(out PupData data))
             {
-                return null;
+                PupKarmaMeter result = new(meter, data);
+                meter.hud.AddPart(result);
+                return result;
             }
-            PupKarmaMeter result = new(meter, data);
-            meter.hud.AddPart(result);
-            return result;
+            return null;
         }
     }
 }

@@ -2,6 +2,7 @@
 using MonoMod.Cil;
 using MonoMod.RuntimeDetour;
 using MoreSlugcats;
+using RWCustom;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,9 +20,9 @@ namespace PupKarma.Hooks
             On.KarmaFlower.Consume += Hook_KarmaFlower_Consume;
             On.MoreSlugcats.SlugNPCAI.WantsToEatThis += Hook_SlugNPCAI_WantsToEatThis;
             IL.MoreSlugcats.SlugNPCAI.Move += IL_SlugNPCAI_Move;
-            On.Player.ctor += Player_ctor;
+            On.Player.ctor += Hook_Player_ctor;
             On.Player.Update += Hook_Player_Update;
-            IL.Player.UpdateMSC += Player_UpdateMSC;
+            IL.Player.UpdateMSC += IL_Player_UpdateMSC;
             On.Player.SlugOnBack.SlugToBack += Hook_SlugOnBack_SlugToBack;
             On.AbstractCreature.Update += Hook_AbstractCreature_Update;
             InitHookMeetRequirment();
@@ -37,11 +38,55 @@ namespace PupKarma.Hooks
             On.VoidSea.VoidSeaScene.Update += Hook_VoidSeaScene_Update;
             IL.World.SpawnGhost += IL_World_SpawnGhost;
             On.RainWorldGame.ExitToVoidSeaSlideShow += Hook_RainWorldGame_ExitToVoidSeaSlideShow;
+            IL.RainWorldGame.SpawnCritters += IL_RainWorldGame_SpawnCritters;
         }
 
-        private static void Player_UpdateMSC1(ILContext il)
+        private static void IL_RainWorldGame_SpawnCritters(ILContext il)
         {
-            Logger.Debug(il.ToString());
+            try
+            {
+                ILCursor c = new(il);
+                c.GotoNext(MoveType.After, x => x.MatchCallvirt<CreatureState>("CycleTick"));
+
+                ILCursor lC = c.Clone();
+                lC.GotoNext(MoveType.After, x => x.MatchCall(typeof(Custom).GetMethod("Log")));
+                ILLabel label = lC.MarkLabel();
+
+                c.Emit(OpCodes.Ldloc_2);
+                c.Emit(OpCodes.Ldarg_2);
+                c.EmitDelegate((AbstractCreature crit, AbstractCreature player) =>
+                {
+                    if (OptionsMenu.CanRespawnPupInPrevShelter && crit.IsSlugpup() && crit.TryGetPupData(out PupData data))
+                    {
+                        AbstractRoom spawnRoom;
+                        if (data.karmaState.firstRespawnShelter != "" && (spawnRoom = crit.world.GetAbstractRoom(data.karmaState.firstRespawnShelter)) != null)
+                        {
+                            if (spawnRoom != player.Room)
+                            {
+                                crit.pos = new(spawnRoom.index, -1, -1, 0);
+                                spawnRoom.AddEntity(crit);
+                                if (spawnRoom.realizedRoom != null)
+                                {
+                                    crit.RealizeInRoom();
+                                }
+                                var wantsBars = player.world.game.GetStorySession.GetStorySessionExt().pupsWantsFoodBars ??= [];
+                                wantsBars.Add(crit);
+                                return true;
+                            }
+                        }
+                        else
+                        {
+                            data.karmaState.firstRespawnShelter = player.Room.name;
+                        }
+                    }
+                    return false;
+                });
+                c.Emit(OpCodes.Brtrue, label);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex);
+            }
         }
 
         private static void Hook_RainWorldGame_ExitToVoidSeaSlideShow(On.RainWorldGame.orig_ExitToVoidSeaSlideShow orig, RainWorldGame self)
@@ -53,7 +98,7 @@ namespace PupKarma.Hooks
             orig(self);
         }
 
-        private static void Player_UpdateMSC(ILContext il)
+        private static void IL_Player_UpdateMSC(ILContext il)
         {
             try
             {
@@ -87,6 +132,7 @@ namespace PupKarma.Hooks
                 {
                     int opVal = OptionsMenu.SelectReqToSpawnGhost.Value;
                     if (opVal == 0) return ob;
+                    PupData.needToSave = false;
                     foreach (string str in world.game.GetStorySession.saveState.pendingFriendCreatures)
                     {
                         AbstractCreature crit = SaveState.AbstractCreatureFromString(world, str, false);
@@ -94,10 +140,10 @@ namespace PupKarma.Hooks
                         {
                             pupDataGhosts.Add(data);
                             crit.state.CycleTick();
-                            data.needToSave = false;
                             crit.Realize();
                         }
                     }
+                    PupData.needToSave = true;
                     bool isOne = opVal == 1;
                     foreach (PupData data in pupDataGhosts.Where(data => data.pup.state.alive))
                     {
@@ -226,7 +272,7 @@ namespace PupKarma.Hooks
             c2.Emit(OpCodes.Ldarg_0);
             c2.EmitDelegate((SSOracleBehavior self) =>
             {
-                return self.currSubBehavior.ID == SSPupKarmaSubBehaviour.SSBehaviourIDs.IncreasePupKarmaCap;
+                return self.currSubBehavior.ID == PupKarmaEnums.SSBehaviourID.IncreasePupKarmaCap;
             });
             c2.Emit(OpCodes.Brtrue, label);
         }
@@ -244,7 +290,7 @@ namespace PupKarma.Hooks
             c.Emit(OpCodes.Ldarg_0);
             c.EmitDelegate((SSOracleBehavior.SSSleepoverBehavior self) =>
             {
-                return self.owner.currSubBehavior.ID == SSPupKarmaSubBehaviour.SSBehaviourIDs.IncreasePupKarmaCap;
+                return self.owner.currSubBehavior.ID == PupKarmaEnums.SSBehaviourID.IncreasePupKarmaCap;
             });
             c.Emit(OpCodes.Brfalse_S, label);
             c.Emit(OpCodes.Ret);
@@ -266,7 +312,7 @@ namespace PupKarma.Hooks
             {
                 if ((!ModManager.Expedition || !owner.oracle.room.game.rainWorld.ExpeditionMode) && owner.oracle.HaveOneLowKarmaCapInIteratorRoom())
                 {
-                    owner.NewAction(SSPupKarmaSubBehaviour.SSActions.TalkingAboutSlugpups);
+                    owner.NewAction(PupKarmaEnums.SSActions.TalkingAboutSlugpups);
                     return true;
                 }
                 return false;
@@ -276,7 +322,7 @@ namespace PupKarma.Hooks
 
         private static void Hook_SSOracleBehavior_ReactToHitWeapon(On.SSOracleBehavior.orig_ReactToHitWeapon orig, SSOracleBehavior self)
         {
-            if (self.currSubBehavior.ID == SSPupKarmaSubBehaviour.SSBehaviourIDs.IncreasePupKarmaCap)
+            if (self.currSubBehavior.ID == PupKarmaEnums.SSBehaviourID.IncreasePupKarmaCap)
             {
                 if (UnityEngine.Random.value < 0.5f)
                 {
@@ -296,7 +342,7 @@ namespace PupKarma.Hooks
 
         private static void Hook_SSOracleBehavior_NewAction(On.SSOracleBehavior.orig_NewAction orig, SSOracleBehavior self, SSOracleBehavior.Action nextAction)
         {
-            if (nextAction == SSPupKarmaSubBehaviour.SSActions.TalkingAboutSlugpups)
+            if (nextAction == PupKarmaEnums.SSActions.TalkingAboutSlugpups)
             {
                 self.currSubBehavior.NewAction(self.action, nextAction);
                 SSOracleBehavior.SubBehavior subBehavior = new SSPupKarmaSubBehaviour(self);
@@ -308,7 +354,7 @@ namespace PupKarma.Hooks
                 self.inActionCounter = 0;
                 return;
             }
-            else if (nextAction == SSPupKarmaSubBehaviour.SSActions.IncraseKarmaToSlugpups)
+            else if (nextAction == PupKarmaEnums.SSActions.IncraseKarmaToSlugpups)
             {
                 self.inActionCounter = 0;
                 self.action = nextAction;
@@ -329,7 +375,7 @@ namespace PupKarma.Hooks
                     {
                         if (room.creatures[i].TryGetPupData(out PupData data))
                         {
-                            data.VisitIteratorAndIncreaseKarma(self.oracle);
+                            data.VisitIteratorAndIncreaseKarma(self.oracle.ID);
                         }
                     }
                 }
@@ -441,24 +487,12 @@ namespace PupKarma.Hooks
             }
         }
 
-        private static void Player_ctor(On.Player.orig_ctor orig, Player self, AbstractCreature abstractCreature, World world)
+        private static void Hook_Player_ctor(On.Player.orig_ctor orig, Player self, AbstractCreature abstractCreature, World world)
         {
             orig(self, abstractCreature, world);
-            if (world.game.session is StoryGameSession storySession && abstractCreature.TryGetPupData(out PupData data))
+            if (world.game.session is StoryGameSession && abstractCreature.TryGetPupData(out PupData data))
             {
                 data.DataRealize();
-                if (data.needToSave)
-                {
-                    Logger.DTDebug("saving");
-                    if (!storySession.GetStorySessionExt().allDatas.Contains(data))
-                    {
-                        storySession.GetStorySessionExt().allDatas.Add(data);
-                    }
-                    if (data.hadDataBefore && !storySession.saveState.GetSVEX().stateHaveDataBefore.Contains(data.karmaState))
-                    {
-                        storySession.saveState.GetSVEX().stateHaveDataBefore.Add(data.karmaState);
-                    }
-                }
             }
         }
 
@@ -503,7 +537,7 @@ namespace PupKarma.Hooks
         private static void Hook_KarmaFlower_Consume(On.KarmaFlower.orig_Consume orig, KarmaFlower self)
         {
             orig(self);
-            if (self.room.game.session is StoryGameSession storySession && storySession.saveState.GetSVEX().flowerController.associatedFlowersToPos.Remove(self.AbstrConsumable))
+            if (self.room.game.session is StoryGameSession storySession && storySession.saveState.GetSVExt().flowerController.associatedFlowersToPos.Remove(self.AbstrConsumable))
             {
                 Logger.Debug("Flower be consumed! Remove from associated flowers dictionary.");
             }

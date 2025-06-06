@@ -8,15 +8,15 @@ namespace PupKarma;
 
 public class PupData(PlayerNPCState pupState)
 {
-    public bool voidKarmaUp = true;
+    public static bool needToSave = true;
 
     public bool dontLoadData;
 
     public bool hadDataBefore;
 
-    public bool karmaAlreadyAssigned;
+    public bool voidKarmaUp = true;
 
-    public bool needToSave = true;
+    public bool karmaAlreadyAssigned;
 
     public PupKarmaMeter pupKarmaMeter;
 
@@ -64,6 +64,22 @@ public class PupData(PlayerNPCState pupState)
         }
     }
 
+    public void TryToSave()
+    {
+        if (needToSave)
+        {
+            var storySession = pup.world.game.GetStorySession;
+            if (!storySession.GetStorySessionExt().allDatas.Contains(this))
+            {
+                storySession.GetStorySessionExt().allDatas.Add(this);
+            }
+            if (hadDataBefore && !storySession.saveState.GetSVExt().stateHaveDataBefore.Contains(karmaState))
+            {
+                storySession.saveState.GetSVExt().stateHaveDataBefore.Add(karmaState);
+            }
+        }
+    }
+
     public void DataRealize()
     {
         realData = new(this, pup.realizedCreature as Player);
@@ -71,14 +87,18 @@ public class PupData(PlayerNPCState pupState)
         {
             realData.AssignKarmaToPup();
         }
+        if (!hadDataBefore)
+        {
+            TryToSave();
+        }
     }
 
-    public void VisitIteratorAndIncreaseKarma(Oracle oracle)
+    public void VisitIteratorAndIncreaseKarma(Oracle.OracleID oracle)
     {
-        if (!karmaState.gotIncreaseFromIterators.Contains(oracle.ID))
+        if (!karmaState.VisitOracle(oracle))
         {
             realData.IncreaseKarmaIterator();
-            karmaState.gotIncreaseFromIterators.Add(oracle.ID);
+            karmaState.AddOracle(oracle);
         }
     }
 
@@ -198,11 +218,13 @@ public class KarmaState
 
     public string oldPupString = "";
 
-    public List<Oracle.OracleID> gotIncreaseFromIterators = [];
+    public string firstRespawnShelter = "";
 
     public bool dead;
 
     public WorldCoordinate? karmaFlowerPos;
+
+    public List<Oracle.OracleID> gotIncreaseFromIterators;
 
     public override string ToString()
     {
@@ -226,18 +248,33 @@ public class KarmaState
                 case "KarmaCap":
                     karmaCap = int.Parse(array2[1]);
                     break;
+                case "RespawnShelter":
+                    firstRespawnShelter = array2[1];
+                    Logger.Debug("Load shelter name: " + firstRespawnShelter);
+                    break;
                 case "VisitedIterators":
                     string[] oracles = Regex.Split(array2[1], "<kpC>");
                     for (int num2 = 0; num2 < oracles.Length; num2++)
                     {
-                        if (Oracle.OracleID.values.entries.Contains(oracles[num2]))
+                        if (oracles[num2] != "")
                         {
-                            gotIncreaseFromIterators.Add(new(oracles[num2]));
+                            AddOracle(new(oracles[num2]));
                         }
                     }
                     break;
             }
         }
+    }
+
+    public void AddOracle(Oracle.OracleID oracle)
+    {
+        gotIncreaseFromIterators ??= [];
+        gotIncreaseFromIterators.Add(oracle);
+    }
+
+    public bool VisitOracle(Oracle.OracleID oracle)
+    {
+        return gotIncreaseFromIterators != null && gotIncreaseFromIterators.Contains(oracle);
     }
 
     public string SaveToString(bool pupIsDead)
@@ -246,12 +283,16 @@ public class KarmaState
         if (pupIsDead)
         {
             result = $"KarmaReinforce<kpB>{false}<kpA>Karma<kpB>{((reinforcedKarma || karma == 0) ? karma : (karma - 1))}<kpA>KarmaCap<kpB>{karmaCap}<kpA>";
+            if (OptionsMenu.CanRespawnPupInPrevShelter && firstRespawnShelter != "")
+            {
+                result += $"RespawnShelter<kpB>{firstRespawnShelter}<kpA>";
+            }
         }
         else
         {
             result = $"KarmaReinforce<kpB>{reinforcedKarma}<kpA>Karma<kpB>{karma}<kpA>KarmaCap<kpB>{karmaCap}<kpA>";
         }
-        if (gotIncreaseFromIterators.Count > 0)
+        if (gotIncreaseFromIterators != null)
         {
             result += $"VisitedIterators<kpB>";
             for (int i = 0; i < gotIncreaseFromIterators.Count; i++)

@@ -368,27 +368,13 @@ namespace PupKarma
         {
             private static bool karmaPups = false;
 
-            public static SSOracleBehavior.Action IncraseKarmaToSlugpupsCW;
-
             internal static void Init()
             {
-                RegisterValues();
                 On.SSOracleBehavior.Update += Hook_CWBehaviour_Update;
                 On.SSOracleBehavior.NewAction += Hook_CWBehaviour_NewAction;
                 On.SSOracleBehavior.SlugcatEnterRoomReaction += Hook_CWBehaviour_ReactToSlug;
                 On.SSOracleBehavior.SpecialEvent += Hook_CWBehaviour_SpecialEvent;
                 InitHookCWConvAddEvents();
-            }
-
-            public static void RegisterValues()
-            {
-                IncraseKarmaToSlugpupsCW = new SSOracleBehavior.Action("IncraseKarmaToSlugpupsCW", true);
-            }
-
-            public static void UnregisterValues()
-            {
-                IncraseKarmaToSlugpupsCW?.Unregister();
-                IncraseKarmaToSlugpupsCW = null;
             }
 
             private static void Hook_CWBehaviour_SpecialEvent(On.SSOracleBehavior.orig_SpecialEvent orig, SSOracleBehavior self, string eventName)
@@ -413,7 +399,7 @@ namespace PupKarma
                     {
                         noB.SeenPlayer = true;
                     }
-                    self.NewAction(IncraseKarmaToSlugpupsCW);
+                    self.NewAction(PupKarmaEnums.SSActions.IncraseKarmaToSlugpups);
                     return;
                 }
                 orig(self);
@@ -437,7 +423,7 @@ namespace PupKarma
 
             public static void Hook_CWBehaviour_NewAction(On.SSOracleBehavior.orig_NewAction orig, SSOracleBehavior self, SSOracleBehavior.Action nextAction)
             {
-                if (self.oracle.IsCW() && nextAction == IncraseKarmaToSlugpupsCW)
+                if (self.oracle.IsCW() && nextAction == PupKarmaEnums.SSActions.IncraseKarmaToSlugpups)
                 {
                     self.currSubBehavior.NewAction(self.action, nextAction);
                     Conversation.ID id = new("IncreasePupKarmaCW");
@@ -464,14 +450,14 @@ namespace PupKarma
 
             public static void Hook_CWBehaviour_Update(On.SSOracleBehavior.orig_Update orig, SSOracleBehavior self, bool eu)
             {
-                if (self.oracle.IsCW() && self.action == IncraseKarmaToSlugpupsCW && karmaPups)
+                if (self.oracle.IsCW() && self.action == PupKarmaEnums.SSActions.IncraseKarmaToSlugpups && karmaPups)
                 {
                     AbstractRoom room = self.oracle.room.abstractRoom;
                     for (int i = 0; i < room.creatures.Count; i++)
                     {
                         if (room.creatures[i].TryGetPupData(out PupData data))
                         {
-                            data.VisitIteratorAndIncreaseKarma(self.oracle);
+                            data.VisitIteratorAndIncreaseKarma(self.oracle.ID);
                         }
                     }
                     self.oracle.room.PlaySound(SoundID.SS_AI_Give_The_Mark_Boom, 0f, 1f, 1f);
@@ -487,7 +473,7 @@ namespace PupKarma
                     {
                         if (room.creatures[i].TryGetPupData(out PupData data))
                         {
-                            data.VisitIteratorAndIncreaseKarma(self.oracle);
+                            data.VisitIteratorAndIncreaseKarma(self.oracle.ID);
                         }
                     }
                 }

@@ -13,9 +13,9 @@ namespace PupKarma.Hooks
         public static void Init()
         {
             On.SaveState.SessionEnded += Hook_SaveState_SessionEnded;
-            On.SaveState.GhostEncounter += SaveState_GhostEncounter;
+            On.SaveState.GhostEncounter += Hook_SaveState_GhostEncounter;
             On.SaveState.LoadGame += Hook_SaveState_LoadGame;
-            On.SaveState.ApplyCustomEndGame += SaveState_ApplyCustomEndGame;
+            On.SaveState.ApplyCustomEndGame += Hook_SaveState_ApplyCustomEndGame;
             On.PlayerProgression.SaveToDisk += Hook_PlayerProgression_SaveToDisk;
             IL.PlayerProgression.SaveDeathPersistentDataOfCurrentState += IL_PlayerProgression_SaveDeathPersistentDataOfCurrentState;
             On.MoreSlugcats.PlayerNPCState.LoadFromString += Hook_PlayerNPCState_LoadFromString;
@@ -23,8 +23,8 @@ namespace PupKarma.Hooks
             On.MoreSlugcats.PlayerNPCState.CycleTick += Hook_PlayerNPCState_CycleTick;
             On.RegionState.AdaptWorldToRegionState += Hook_RegionState_AdaptWorldToRegionState;
             IL.RegionState.AdaptRegionStateToWorld += IL_RegionState_AdaptRegionStateToWorld;
-            On.PlayerProgression.MiscProgressionData.ToString += MiscProgressionData_ToString;
-            On.PlayerProgression.MiscProgressionData.FromString += MiscProgressionData_FromString;
+            On.PlayerProgression.MiscProgressionData.ToString += Hook_MiscProgressionData_ToString;
+            On.PlayerProgression.MiscProgressionData.FromString += Hook_MiscProgressionData_FromString;
             On.PlayerProgression.WipeAll += Hook_PlayerProgression_WipeAll;
         }
 
@@ -34,15 +34,14 @@ namespace PupKarma.Hooks
             orig(self);
         }
 
-        private static void MiscProgressionData_FromString(On.PlayerProgression.MiscProgressionData.orig_FromString orig, PlayerProgression.MiscProgressionData self, string s)
+        private static void Hook_MiscProgressionData_FromString(On.PlayerProgression.MiscProgressionData.orig_FromString orig, PlayerProgression.MiscProgressionData self, string s)
         {
             orig(self, s);
-            Logger.Debug("MPD From string: " + s);
             string[] array1 = Regex.Split(s, "<mpdA>");
             for (int i = 0; i < array1.Length; i++)
             {
                 string[] array2 = Regex.Split(array1[i], "<mpdB>");
-                if (array2[0] == "SLUGCATASCENDEDPUPS" && SlugcatStats.Name.values.entries.Contains(array2[1]))
+                if (array2[0] == "SLUGCATASCENDEDPUPS")
                 {
                     self.GetMPDExt().slugcatAscendedPups[new(array2[1])] = int.Parse(array2[2]);
                     self.unrecognizedSaveStrings.Remove(array1[i]);
@@ -50,7 +49,7 @@ namespace PupKarma.Hooks
             }
         }
 
-        private static string MiscProgressionData_ToString(On.PlayerProgression.MiscProgressionData.orig_ToString orig, PlayerProgression.MiscProgressionData self)
+        private static string Hook_MiscProgressionData_ToString(On.PlayerProgression.MiscProgressionData.orig_ToString orig, PlayerProgression.MiscProgressionData self)
         {
             string result = orig(self);
             if (self.GetMPDExt().slugcatAscendedPups.Count > 0)
@@ -63,7 +62,6 @@ namespace PupKarma.Hooks
                     }
                 }
             }
-            Logger.Debug("MPD save result: " + result);
             return result;
         }
 
@@ -79,7 +77,7 @@ namespace PupKarma.Hooks
                 if (slugpup.TryGetPupData(out PupData data))
                 {
                     regionState.world.game.GetStorySession.GetStorySessionExt().allDatas.Remove(data);
-                    regionState.saveState.GetSVEX().stateHaveDataBefore.Remove(data.karmaState);
+                    regionState.saveState.GetSVExt().stateHaveDataBefore.Remove(data.karmaState);
                 }
             });
         }
@@ -87,7 +85,7 @@ namespace PupKarma.Hooks
         private static void Hook_RegionState_AdaptWorldToRegionState(On.RegionState.orig_AdaptWorldToRegionState orig, RegionState self)
         {
             orig(self);
-            PupKarmaCWTs.SaveStateExt svEx = self.saveState.GetSVEX();
+            PupKarmaCWTs.SaveStateExt svEx = self.saveState.GetSVExt();
             Logger.Debug("Adapting flowers: " + svEx.flowerController.flowersPositions.Count);
             int i = 0;
             svEx.flowerController.flowersPositions.RemoveAll(coord =>
@@ -132,7 +130,7 @@ namespace PupKarma.Hooks
                             {
                                 Logger.DTDebug($"Save state found. Player is dead: {saveAsIfPlayerDied}");
                                 bool pupFlowersFound = false;
-                                string[] pupsAndFlowers = progression.currentSaveState.GetSVEX().SavePupsAndFlowersToUnsaveable(saveAsIfPlayerDied);
+                                string[] pupsAndFlowers = progression.currentSaveState.GetSVExt().SavePupsAndFlowersToUnsaveable(saveAsIfPlayerDied);
                                 string[] arr1 = Regex.Split(array2[1], "<svA>");
                                 for (int num2 = 0; num2 < arr1.Length; num2++)
                                 {
@@ -192,40 +190,36 @@ namespace PupKarma.Hooks
             }
         }
 
-        private static void SaveState_ApplyCustomEndGame(On.SaveState.orig_ApplyCustomEndGame orig, SaveState self, RainWorldGame game, bool addFiveCycles)
+        private static void Hook_SaveState_ApplyCustomEndGame(On.SaveState.orig_ApplyCustomEndGame orig, SaveState self, RainWorldGame game, bool addFiveCycles)
         {
-            self.GetSVEX().passage = true;
+            self.GetSVExt().passage = true;
             orig(self, game, addFiveCycles);
         }
 
         private static void Hook_PlayerNPCState_CycleTick(On.MoreSlugcats.PlayerNPCState.orig_CycleTick orig, PlayerNPCState self)
         {
             orig(self);
-            if (OptionsMenu.RespawnPup.Value && self.player.world.game.IsStorySession && self.dead && self.TryGetPupData(out PupData data) && data.hadDataBefore && data.karma > 0)
+            if (OptionsMenu.RevivePup.Value && self.player.world.game.IsStorySession && self.dead && self.TryGetPupData(out PupData data) && data.hadDataBefore && data.karma > 0)
             {
                 Logger.DTDebug("Pup dead! Reviving...");
                 self.alive = true;
                 data.karma -= data.reinforcedKarma ? 0 : 1;
                 data.reinforcedKarma = false;
             }
-
         }
 
         private static string Hook_PlayerNPCState_ToString(On.MoreSlugcats.PlayerNPCState.orig_ToString orig, PlayerNPCState self)
         {
             string text = orig(self);
-            if (self.TryGetPupData(out PupData data))
+            if (self.TryGetPupData(out PupData data) && !data.dontLoadData)
             {
-                bool shouldRespawn = OptionsMenu.RespawnPup.Value;
+                bool shouldRespawn = OptionsMenu.RevivePup.Value;
                 if (shouldRespawn && self.dead && data.karma > 0)
                 {
                     Logger.DTDebug("Pup dead! Replace dead strings...");
                     text = Regex.Replace(text, "Dead", (self.socialMemory != null && self.socialMemory.relationShips.Count > 0) ? self.socialMemory.ToString() : "");
                 }
-                if (!data.dontLoadData)
-                {
-                    text += $"PupData<cC>{data.karmaState.SaveToString(shouldRespawn && data.karmaState.dead)}<cB>";
-                }
+                text += $"PupData<cC>{data.karmaState.SaveToString(shouldRespawn && data.karmaState.dead)}<cB>";
             }
             return text;
         }
@@ -247,6 +241,7 @@ namespace PupKarma.Hooks
                     }
                 }
                 self.unrecognizedSaveStrings.Remove("PupData");
+                data.TryToSave();
 
                 data.dontLoadData = true;
                 data.karmaState.oldPupString = SaveState.AbstractCreatureToStringStoryWorld(self.player);
@@ -260,7 +255,7 @@ namespace PupKarma.Hooks
             {
                 if (self.currentSaveState != null)
                 {
-                    PupKarmaCWTs.SaveStateExt svEx = self.currentSaveState.GetSVEX();
+                    PupKarmaCWTs.SaveStateExt svEx = self.currentSaveState.GetSVExt();
 
                     if (svEx.passage)
                     {
@@ -301,9 +296,9 @@ namespace PupKarma.Hooks
             return orig(self, saveCurrentState, saveMaps, saveMiscProg);
         }
 
-        private static void SaveState_GhostEncounter(On.SaveState.orig_GhostEncounter orig, SaveState self, GhostWorldPresence.GhostID ghost, RainWorld rainWorld)
+        private static void Hook_SaveState_GhostEncounter(On.SaveState.orig_GhostEncounter orig, SaveState self, GhostWorldPresence.GhostID ghost, RainWorld rainWorld)
         {
-            foreach (KarmaState karmaState in self.GetSVEX().stateHaveDataBefore)
+            foreach (KarmaState karmaState in self.GetSVExt().stateHaveDataBefore)
             {
                 if (karmaState.karmaCap < 9)
                 {
@@ -317,7 +312,7 @@ namespace PupKarma.Hooks
         private static void Hook_SaveState_LoadGame(On.SaveState.orig_LoadGame orig, SaveState self, string str, RainWorldGame game)
         {
             orig(self, str, game);
-            PupKarmaCWTs.SaveStateExt svEx = self.GetSVEX();
+            PupKarmaCWTs.SaveStateExt svEx = self.GetSVExt();
             string[] array1 = Regex.Split(str, "<svA>");
             for (int i = 0; i < array1.Length; i++)
             {
@@ -354,19 +349,19 @@ namespace PupKarma.Hooks
         {
             try
             {
-                PupKarmaCWTs.SaveStateExt svEx = self.GetSVEX();
+                PupKarmaCWTs.SaveStateExt svEx = self.GetSVExt();
                 PupKarmaCWTs.StorySessionExt sessionExt = game.GetStorySession.GetStorySessionExt();
                 Logger.DTDebug("Session ended. Passing through an pups and datas. Datas found: " + sessionExt.allDatas.Count);
                 if (survived)
                 {
                     Logger.Debug("Player survive!");
                     svEx.stateHaveDataBefore.Clear();
-                    AbstractRoom playerShelter = game.world.GetAbstractRoom((game.FirstAlivePlayer ?? game.FirstAnyPlayer).pos);
+                    AbstractRoom playerShelter = (game.FirstAlivePlayer ?? game.FirstAnyPlayer).Room;
                     if (playerShelter == null)
                     {
                         for (int i = 0; i < game.Players.Count; i++)
                         {
-                            if (game.Players[i] != null && (playerShelter = game.world.GetAbstractRoom(game.Players[i].pos)) != null)
+                            if (game.Players[i] != null && (playerShelter = game.Players[i].Room) != null)
                             {
                                 break;
                             }
@@ -384,7 +379,7 @@ namespace PupKarma.Hooks
 
                         if (OptionsMenu.ReturnPupInShelterAfterSave.Value && notInShelter && data.hadDataBefore && data.karma > 0)
                         {
-                            Logger.Debug($"Pup's not in the player's shelter! Return pup back!\nPup info: {data.pup}, pup class: {data.realData.realPup.slugcatStats.name}");
+                            Logger.DTDebug($"Pup's not in the player's shelter! Return pup back!\nPup info: {data.pup}, pup class: {data.realData.realPup.slugcatStats.name}");
 
                             data.karmaState.dead = true;
                             string pupString = SaveState.AbstractCreatureToStringStoryWorld(data.pup);
